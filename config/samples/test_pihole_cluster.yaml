@@ -1,0 +1,15 @@
+apiVersion: pihole.paldab.nl/v1alpha1
+kind: PiHoleCluster
+metadata:
+  name: test-pihole
+spec:
+  replicas: 2
+
+  image: pihole/pihole:latest
+
+  storage:
+    size: 5Gi
+
+  config:
+    TZ: Europe/Amsterdam
+    FTLCONF_dns_listeningMode: all

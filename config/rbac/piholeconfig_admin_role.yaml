@@ -1,0 +1,27 @@
+# This rule is not used by the project pihole-ha-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over pihole.paldab.nl.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: pihole-ha-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: piholeconfig-admin-role
+rules:
+- apiGroups:
+  - pihole.paldab.nl
+  resources:
+  - piholeconfigs
+  verbs:
+  - '*'
+- apiGroups:
+  - pihole.paldab.nl
+  resources:
+  - piholeconfigs/status
+  verbs:
+  - get

@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- pihole_v1alpha1_piholecluster.yaml
+- pihole_v1alpha1_piholeconfig.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
