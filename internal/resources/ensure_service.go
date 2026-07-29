@@ -5,6 +5,8 @@ import (
 
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/builders"
+	"github.com/paldab/pihole-ha-operator/internal/defaults"
+	"github.com/paldab/pihole-ha-operator/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -84,6 +86,7 @@ func buildServiceMap(cluster *v1alpha1.PiHoleCluster) map[string]DesiredServiceC
 func EnsureServices(rc *ResourceContext) error {
 	desiredServiceMap := buildServiceMap(rc.Cluster)
 	serviceConfig := rc.Cluster.Spec.Services
+	primaryPodLabels := utils.MergeMap(defaults.PiholeOperatorLabels(rc.Cluster), defaults.PrimaryPodLabels)
 
 	if !*serviceConfig.Web.Enabled {
 		delete(desiredServiceMap, "web")
@@ -107,7 +110,7 @@ func EnsureServices(rc *ResourceContext) error {
 		}
 
 		_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, svc, func() error {
-			desired := builders.BuildService(rc.Cluster, desiredServiceSettings.Config, desiredServiceSettings.Ports, desiredServiceSettings.SessionAffinityTimeout)
+			desired := builders.BuildService(rc.Cluster, desiredServiceSettings.Config, desiredServiceSettings.Ports, primaryPodLabels)
 
 			svc.Labels = desired.Labels
 			svc.Annotations = desired.Annotations

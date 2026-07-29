@@ -44,7 +44,7 @@ func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 
 	stringifiedData := config.Spec.Adlists.ArrayToString()
 	configmapStringData := map[string]string{
-		"adlists.list": stringifiedData,
+		defaults.VolumeMountAdlistKey: stringifiedData,
 	}
 
 	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
@@ -73,7 +73,7 @@ func EnsureCNAMEConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) er
 	stringifiedData := config.Spec.CNAMEs.ToPiholeConfigString()
 
 	configmapStringData := map[string]string{
-		"05-custom-pihole-cnames.conf": stringifiedData,
+		defaults.VolumeMountCNAMEKey: stringifiedData,
 	}
 
 	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
@@ -102,7 +102,7 @@ func EnsureAdditionalHostsConfigmap(rc *ResourceContext, config *v1alpha1.PiHole
 	stringifiedData := config.Spec.Hosts.ToPiholeConfigString()
 
 	configmapStringData := map[string]string{
-		"additional-hosts": stringifiedData,
+		defaults.VolumeMountAddHostsKey: stringifiedData,
 	}
 
 	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
@@ -131,7 +131,7 @@ func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 	stringifiedData := config.Spec.CustomOptions.ToPiholeConfigString()
 
 	configmapStringData := map[string]string{
-		"02-custom.conf": stringifiedData,
+		defaults.VolumeMountCustomKey: stringifiedData,
 	}
 
 	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
