@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -60,8 +61,16 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	var piholeCluster piholev1alpha1.PiHoleCluster
 	requestedCluster := types.NamespacedName{Name: piholeConfig.Spec.ClusterRef.Name, Namespace: piholeConfig.Namespace}
-	// Need a fix that if piholeconfig exists without cluster, that it doesnt spam errors
 	if err := r.Get(ctx, requestedCluster, &piholeCluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("waiting for PiHoleCluster",
+				"cluster", requestedCluster.Name,
+				"namespace", requestedCluster.Namespace,
+				"config", piholeConfig.Name,
+			)
+			return ctrl.Result{}, nil
+		}
+
 		log.Error(err, "could not find the pihole cluster of the requested pihole config", "cluster", piholeConfig.Spec.ClusterRef.Name, "namespace", piholeConfig.Namespace, "config", piholeConfig.Name)
 		return ctrl.Result{}, err
 	}
