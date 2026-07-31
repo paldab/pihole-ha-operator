@@ -29,7 +29,6 @@ func ReconcileFailoverMultiInstance(ctx context.Context, k8sClient client.Client
 		if err := HandleStandbyPodsWithoutRole(ctx, k8sClient, leaderElectionState, nil); err != nil {
 			log.Error(err, "could not finish labeling unlabeled standby pods")
 			return ctrl.Result{}, err
-
 		}
 
 		return ctrl.Result{}, nil
@@ -37,7 +36,6 @@ func ReconcileFailoverMultiInstance(ctx context.Context, k8sClient client.Client
 
 	// handle startup cases where pods are still getting ready
 	if len(leaderElectionState.AvailableLeaderCandidates.Items) == 0 {
-		// status ReasonNoEligibleLeader
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 

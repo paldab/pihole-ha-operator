@@ -83,6 +83,11 @@ func buildServiceMap(cluster *v1alpha1.PiHoleCluster) map[string]DesiredServiceC
 	}
 }
 
+func applyServiceMetaData(current, desired *corev1.Service) {
+	current.Labels = desired.Labels
+	current.Annotations = desired.Annotations
+}
+
 func EnsureServices(rc *ResourceContext) error {
 	desiredServiceMap := buildServiceMap(rc.Cluster)
 	serviceConfig := rc.Cluster.Spec.Services
@@ -101,7 +106,7 @@ func EnsureServices(rc *ResourceContext) error {
 	}
 
 	for svcName, desiredServiceSettings := range desiredServiceMap {
-		svc := &corev1.Service{
+		currentSvc := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        fmt.Sprintf("%s-%s", rc.Cluster.Name, svcName),
 				Namespace:   rc.Cluster.Namespace,
@@ -109,14 +114,14 @@ func EnsureServices(rc *ResourceContext) error {
 			},
 		}
 
-		_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, svc, func() error {
-			desired := builders.BuildService(rc.Cluster, desiredServiceSettings.Config, desiredServiceSettings.Ports, primaryPodLabels)
+		desiredSvc := builders.BuildService(rc.Cluster, desiredServiceSettings.Config, desiredServiceSettings.Ports, primaryPodLabels)
+		_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, currentSvc, func() error {
 
-			svc.Labels = desired.Labels
-			svc.Annotations = desired.Annotations
-			svc.Spec = desired.Spec
+			applyServiceMetaData(currentSvc, desiredSvc)
 
-			return ctrl.SetControllerReference(rc.Cluster, svc, rc.K8sClient.Scheme())
+			currentSvc.Spec = desiredSvc.Spec
+
+			return ctrl.SetControllerReference(rc.Cluster, currentSvc, rc.K8sClient.Scheme())
 		})
 
 		if err != nil {

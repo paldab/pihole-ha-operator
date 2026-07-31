@@ -19,7 +19,7 @@ func BuildPiholeStatefulSet(cluster *piholev1alpha1.PiHoleCluster, labels, podLa
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: cluster.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: podLabels,
 			},
 			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
 				WhenDeleted: "Retain", //TODO: This should go to delete whenever we have syncing between all pods

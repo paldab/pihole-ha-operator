@@ -8,6 +8,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+func applyIngressMetaData(current, desired *networkingv1.Ingress) {
+	current.Labels = desired.Labels
+	current.Annotations = desired.Annotations
+}
+
 func EnsureIngress(rc *ResourceContext) error {
 	ingressConfig := rc.Cluster.Spec.Ingress
 
@@ -15,7 +20,7 @@ func EnsureIngress(rc *ResourceContext) error {
 		return nil
 	}
 
-	ing := &networkingv1.Ingress{
+	currentIng := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        rc.Cluster.Name,
 			Namespace:   rc.Cluster.Namespace,
@@ -23,14 +28,14 @@ func EnsureIngress(rc *ResourceContext) error {
 		},
 	}
 
-	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, ing, func() error {
-		desired := builders.BuildIngress(rc.Cluster)
+	desiredIng := builders.BuildIngress(rc.Cluster)
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, currentIng, func() error {
 
-		ing.Labels = desired.Labels
-		ing.Annotations = desired.Annotations
-		ing.Spec = desired.Spec
+		applyIngressMetaData(currentIng, desiredIng)
 
-		return ctrl.SetControllerReference(rc.Cluster, ing, rc.Scheme)
+		currentIng.Spec = desiredIng.Spec
+
+		return ctrl.SetControllerReference(rc.Cluster, currentIng, rc.Scheme)
 	})
 
 	if err != nil {

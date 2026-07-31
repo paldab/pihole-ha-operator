@@ -5,7 +5,6 @@ import (
 
 	"github.com/paldab/pihole-ha-operator/internal/builders"
 	"github.com/paldab/pihole-ha-operator/internal/defaults"
-	"github.com/paldab/pihole-ha-operator/internal/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,11 +12,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func EnsureStatefulSet(rc *ResourceContext) error {
-	operatorLabels := defaults.PiholeOperatorLabels(rc.Cluster)
-	podLabels := utils.MergeMap(operatorLabels, rc.Cluster.Spec.Config.Labels)
+func applyStatefulSetMetaData(currentSts, desiredSts *appsv1.StatefulSet) {
+	currentSts.Labels = desiredSts.Labels
+	currentSts.Annotations = desiredSts.Annotations
+}
 
-	totalVolumeMounts := []corev1.VolumeMount{
+func applyMutableStatefulSetFields(currentSts, desiredSts *appsv1.StatefulSet) {
+	currentSts.Spec.Replicas = desiredSts.Spec.Replicas
+	currentSts.Spec.Template = desiredSts.Spec.Template
+	currentSts.Spec.UpdateStrategy = desiredSts.Spec.UpdateStrategy
+	currentSts.Spec.PersistentVolumeClaimRetentionPolicy = desiredSts.Spec.PersistentVolumeClaimRetentionPolicy
+}
+
+func EnsureStatefulSet(rc *ResourceContext) error {
+	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster)
+	podLabels := defaults.PiholePodLabels(rc.Cluster)
+
+	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      defaults.PiholeStatefulSetVolumeName,
 			MountPath: "/etc/pihole",
@@ -25,34 +36,30 @@ func EnsureStatefulSet(rc *ResourceContext) error {
 	}
 
 	configVolumes, configVolumeMounts := getPiholeConfigVolumes(rc.Cluster.Name)
-	totalVolumeMounts = append(totalVolumeMounts, configVolumeMounts...)
-	piholeContainers := builders.BuildPiholeContainers(*rc.Cluster, totalVolumeMounts)
+	volumeMounts = append(volumeMounts, configVolumeMounts...)
+	containers := builders.BuildPiholeContainers(*rc.Cluster, volumeMounts)
 
-	sts := &appsv1.StatefulSet{
+	desiredSts := builders.BuildPiholeStatefulSet(rc.Cluster, stsLabels, podLabels, containers, configVolumes)
+
+	currentSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rc.Cluster.Name,
 			Namespace: rc.Cluster.Namespace,
 		},
 	}
 
-	_, err := controllerutil.CreateOrPatch(rc.Ctx, rc.K8sClient, sts, func() error {
-		isNewObject := sts.CreationTimestamp.IsZero()
-		desiredObject := builders.BuildPiholeStatefulSet(rc.Cluster, operatorLabels, podLabels, piholeContainers, configVolumes)
+	_, err := controllerutil.CreateOrPatch(rc.Ctx, rc.K8sClient, currentSts, func() error {
+		isNewSts := currentSts.CreationTimestamp.IsZero()
 
-		sts.Labels = desiredObject.Labels
-		sts.Annotations = desiredObject.Annotations
+		applyStatefulSetMetaData(currentSts, desiredSts)
 
-		if isNewObject {
-			sts.Spec = desiredObject.Spec
+		if isNewSts {
+			currentSts.Spec = desiredSts.Spec
 		} else {
-			// Only update mutable fields
-			sts.Spec.Replicas = desiredObject.Spec.Replicas
-			sts.Spec.Template = desiredObject.Spec.Template
-			sts.Spec.UpdateStrategy = desiredObject.Spec.UpdateStrategy
-			sts.Spec.PersistentVolumeClaimRetentionPolicy = desiredObject.Spec.PersistentVolumeClaimRetentionPolicy
+			applyMutableStatefulSetFields(currentSts, desiredSts)
 		}
 
-		return ctrl.SetControllerReference(rc.Cluster, sts, rc.K8sClient.Scheme())
+		return ctrl.SetControllerReference(rc.Cluster, currentSts, rc.K8sClient.Scheme())
 	})
 
 	return err

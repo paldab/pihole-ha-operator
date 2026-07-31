@@ -4,16 +4,21 @@ import (
 	"fmt"
 
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
+	"github.com/paldab/pihole-ha-operator/internal/utils"
 )
 
-const RoleLabel = "paldab.nl/instanceRole"
+const (
+	RoleLabel    = "paldab.nl/instanceRole"
+	LeaderLabel  = "primary"
+	StandbyLabel = "standby"
+)
 
 var PrimaryPodLabels = map[string]string{
-	RoleLabel: "primary",
+	RoleLabel: LeaderLabel,
 }
 
 var StandbyPodLabels = map[string]string{
-	RoleLabel: "standby",
+	RoleLabel: StandbyLabel,
 }
 
 func PiholeOperatorLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
@@ -22,6 +27,20 @@ func PiholeOperatorLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
 		"paldab.nl/cluster":            cluster.Name,
 		// "app.kubernetes.io/version":    imageTag, TODO
 	}
+}
+
+func PiholePodLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
+	staticLabels := StandbyPodLabels
+	operatorLabels := PiholeOperatorLabels(cluster)
+	userAddedLabels := cluster.Spec.Config.Labels
+
+	operatorEnforcedLabels := utils.MergeMap(operatorLabels, staticLabels)
+
+	if userAddedLabels != nil {
+		return utils.MergeMap(userAddedLabels, operatorEnforcedLabels)
+	}
+
+	return operatorEnforcedLabels
 }
 
 // Pihole config

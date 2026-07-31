@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"context"
 	"fmt"
 	"slices"
 
@@ -16,20 +15,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func UpdateFailoverStatus(ctx context.Context, k8sClient client.Client, cluster *v1alpha1.PiHoleCluster, sts *appsv1.StatefulSet) func(*failover.FailoverResult) error {
+func UpdateFailoverStatus(rc *ResourceContext, sts *appsv1.StatefulSet) func(*failover.FailoverResult) error {
 	return func(failoverResult *failover.FailoverResult) error {
-		return UpdateStatusIfChanged(ctx, k8sClient, cluster, sts, failoverResult)
+		return UpdateStatusIfChanged(rc, sts, failoverResult)
 	}
 }
 
-func UpdateStatusIfChanged(ctx context.Context, k8sClient client.Client, cluster *v1alpha1.PiHoleCluster, sts *appsv1.StatefulSet, failoverResult *failover.FailoverResult) error {
-	desiredStatus := calculateStatus(cluster, sts, failoverResult)
+func UpdateStatusIfChanged(rc *ResourceContext, sts *appsv1.StatefulSet, failoverResult *failover.FailoverResult) error {
+	desiredStatus := calculateStatus(rc.Cluster, sts, failoverResult)
 
-	if !equality.Semantic.DeepEqual(cluster.Status, desiredStatus) {
-		originalCluster := cluster.DeepCopy()
-		cluster.Status = desiredStatus
+	if !equality.Semantic.DeepEqual(rc.Cluster.Status, desiredStatus) {
+		// log := logf.FromContext(rc.Ctx)
+		// log.Info("patching status",
+		// 	"old", rc.Cluster.Status,
+		// 	"new", desiredStatus,
+		// )
+		originalCluster := rc.Cluster.DeepCopy()
+		rc.Cluster.Status = desiredStatus
 
-		err := k8sClient.Status().Patch(ctx, cluster, client.MergeFrom(originalCluster))
+		err := rc.K8sClient.Status().Patch(rc.Ctx, rc.Cluster, client.MergeFrom(originalCluster))
 		return err
 	}
 
@@ -50,8 +54,8 @@ func calculateStatus(cluster *v1alpha1.PiHoleCluster, sts *appsv1.StatefulSet, f
 	}
 
 	// TODO: handle failover status
-
 	if failoverResult != nil {
+		newStatus.FailoverInProgress = &failoverResult.InProgress
 		if failoverResult.Leader != nil {
 			newStatus.CurrentLeader = &failoverResult.Leader.Name
 		} else {

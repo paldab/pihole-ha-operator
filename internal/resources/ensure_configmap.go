@@ -134,8 +134,8 @@ func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 		defaults.VolumeMountCustomKey: stringifiedData,
 	}
 
+	desired := builders.BuildConfigmap(configmapStringData)
 	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
-		desired := builders.BuildConfigmap(configmapStringData)
 
 		configmap.Data = desired.Data
 

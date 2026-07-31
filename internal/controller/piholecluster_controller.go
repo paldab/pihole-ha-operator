@@ -114,7 +114,7 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	desiredReplicas := ptr.Deref(piholeCluster.Spec.Replicas, int32(1))
-	updateFailoverStatusFunc := resources.UpdateFailoverStatus(ctx, r.Client, &piholeCluster, managedSts)
+	updateFailoverStatusFunc := resources.UpdateFailoverStatus(&resourceContext, managedSts)
 	if desiredReplicas == 1 && len(clusterOwnedpods.Items) == 1 {
 		onlyPod := clusterOwnedpods.Items[0]
 		return failover.ReconcileFailoverSingleInstance(ctx, r.Client, &onlyPod, updateFailoverStatusFunc)
@@ -131,7 +131,7 @@ func (r *PiHoleClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piholev1alpha1.PiHoleCluster{}).
 		Owns(&appsv1.StatefulSet{}).
-		Owns(&corev1.Pod{}).
+		// Owns(&corev1.Pod{}).
 		Named("piholecluster").
 		Complete(r)
 }

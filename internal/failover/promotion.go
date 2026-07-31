@@ -30,6 +30,10 @@ func demoteToStandby(ctx context.Context, k8sClient client.Client, pod *corev1.P
 		pod.Labels = make(map[string]string)
 	}
 
+	if pod.Labels[defaults.RoleLabel] == defaults.StandbyLabel {
+		return nil
+	}
+
 	pod.Labels = utils.MergeMap(pod.Labels, defaults.StandbyPodLabels)
 
 	return k8sClient.Patch(ctx, pod, client.MergeFrom(originalPod))
