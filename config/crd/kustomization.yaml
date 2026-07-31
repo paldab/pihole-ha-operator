@@ -2,11 +2,11 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/pihole.paldab.nl_piholeclusters.yaml
-- bases/pihole.paldab.nl_piholeconfigs.yaml
+  - bases/pihole.paldab.nl_piholeclusters.yaml
+  - bases/pihole.paldab.nl_piholeconfigs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
-patches:
+patches: []
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 # +kubebuilder:scaffold:crdkustomizewebhookpatch

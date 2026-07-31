@@ -19,6 +19,10 @@
 make docker-build docker-push IMG=<some-registry>/pihole-ha-operator:tag
 ```
 
+**NOTE:** Running make test-e2e does not work with podman because a known limitation 
+- https://github.com/kubernetes-sigs/kind/pull/2041
+- https://github.com/kubernetes-sigs/kind/issues/2038
+
 **NOTE:** This image ought to be published in the personal registry you specified.
 And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don’t work.
