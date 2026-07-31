@@ -25,7 +25,7 @@ func applyMutableStatefulSetFields(currentSts, desiredSts *appsv1.StatefulSet) {
 }
 
 func EnsureStatefulSet(rc *ResourceContext) error {
-	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster)
+	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster.Name)
 	podLabels := defaults.PiholePodLabels(rc.Cluster)
 
 	volumeMounts := []corev1.VolumeMount{

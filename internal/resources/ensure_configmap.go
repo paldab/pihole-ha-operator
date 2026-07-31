@@ -15,7 +15,7 @@ import (
 
 func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, config *v1alpha1.PiHoleConfig, component string) *corev1.ConfigMap {
 	configmapName := defaults.GetConfigMapName(cluster.Name, component)
-	operatorLabels := defaults.PiholeOperatorLabels(cluster)
+	operatorLabels := defaults.PiholeOperatorLabels(cluster.Name)
 
 	mergedLabels := utils.MergeMap(operatorLabels, map[string]string{
 		"app.kubernetes.io/component": fmt.Sprintf("%s-config", component),

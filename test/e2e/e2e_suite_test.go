@@ -38,6 +38,22 @@ var (
 	shouldCleanupCertManager = false
 )
 
+const (
+	operatorDeployName = "pihole-ha-operator-controller-manager"
+
+	// namespace where the project is deployed in
+	namespace = "pihole-ha-operator-system"
+
+	// serviceAccountName created for the project
+	serviceAccountName = "pihole-ha-operator-controller-manager"
+
+	// metricsServiceName is the name of the metrics service of the project
+	metricsServiceName = "pihole-ha-operator-controller-manager-metrics-service"
+
+	// metricsRoleBindingName is the name of the RBAC that will be created to allow get the metrics data
+	metricsRoleBindingName = "pihole-ha-operator-metrics-binding"
+)
+
 // TestE2E runs the e2e test suite to validate the solution in an isolated environment.
 // The default setup requires Kind and CertManager.
 //
@@ -51,23 +67,48 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	By("building the manager image")
-	cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", managerImage))
-	_, err := utils.Run(cmd)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager image")
+	// By("building the manager image")
+	// cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", managerImage))
+	// _, err := utils.Run(cmd)
+	// ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager image")
 
 	// TODO(user): If you want to change the e2e test vendor from Kind,
 	// ensure the image is built and available, then remove the following block.
+
 	By("loading the manager image on Kind")
-	err = utils.LoadImageToKindClusterWithName(managerImage)
+	err := utils.LoadImageToKindClusterWithName(managerImage)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager image into Kind")
 
-	configureKubectlKubeRC()
-	setupCertManager()
+	// configureKubectlKubeRC()
+	// setupCertManager()
+
+	By("creating the e2e test namespace")
+	utils.CreateE2ETestNamespace(namespace)
+
+	By("installing crds")
+	utils.InstallCrds()
+
+	By("deploying the operator")
+	utils.DeployOperator(managerImage)
+
+	utils.WaitForOperatorReady(operatorDeployName, namespace)
 })
 
 var _ = AfterSuite(func() {
 	teardownCertManager()
+
+	By("undeploying the controller-manager")
+	cmd := exec.Command("make", "undeploy")
+	_, _ = utils.Run(cmd)
+
+	By("uninstalling CRDs")
+	cmd = exec.Command("make", "uninstall")
+	_, _ = utils.Run(cmd)
+
+	By("removing manager namespace")
+	cmd = exec.Command("kubectl", "delete", "ns", namespace)
+	_, _ = utils.Run(cmd)
+
 })
 
 // Disable kubectl kuberc by default for test isolation.

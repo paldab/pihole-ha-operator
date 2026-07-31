@@ -21,17 +21,17 @@ var StandbyPodLabels = map[string]string{
 	RoleLabel: StandbyLabel,
 }
 
-func PiholeOperatorLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
+func PiholeOperatorLabels(clusterName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "pihole-ha-operator",
-		"paldab.nl/cluster":            cluster.Name,
+		"paldab.nl/cluster":            clusterName,
 		// "app.kubernetes.io/version":    imageTag, TODO
 	}
 }
 
 func PiholePodLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
 	staticLabels := StandbyPodLabels
-	operatorLabels := PiholeOperatorLabels(cluster)
+	operatorLabels := PiholeOperatorLabels(cluster.Name)
 	userAddedLabels := cluster.Spec.Config.Labels
 
 	operatorEnforcedLabels := utils.MergeMap(operatorLabels, staticLabels)

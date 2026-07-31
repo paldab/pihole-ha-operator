@@ -103,7 +103,7 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	clusterOwnedPodLabels := defaults.PiholeOperatorLabels(&piholeCluster)
+	clusterOwnedPodLabels := defaults.PiholeOperatorLabels(piholeCluster.Name)
 	clusterOwnedpods := &corev1.PodList{}
 	if err := r.List(
 		ctx,

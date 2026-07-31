@@ -25,7 +25,7 @@ func defaultConfigProbes(config *piholev1alpha1.PiHolePodConfig) {
 
 // defaultConfigAffinity builds the preferred pod affinity that prefers not to schedule on a node that already has a pihole pod
 func defaultConfigAffinity(obj *piholev1alpha1.PiHoleCluster) {
-	clusterLabels := PiholeOperatorLabels(obj)
+	clusterLabels := PiholeOperatorLabels(obj.Name)
 
 	obj.Spec.Config.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{

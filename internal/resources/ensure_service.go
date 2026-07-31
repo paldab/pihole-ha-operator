@@ -91,7 +91,7 @@ func applyServiceMetaData(current, desired *corev1.Service) {
 func EnsureServices(rc *ResourceContext) error {
 	desiredServiceMap := buildServiceMap(rc.Cluster)
 	serviceConfig := rc.Cluster.Spec.Services
-	primaryPodLabels := utils.MergeMap(defaults.PiholeOperatorLabels(rc.Cluster), defaults.PrimaryPodLabels)
+	primaryPodLabels := utils.MergeMap(defaults.PiholeOperatorLabels(rc.Cluster.Name), defaults.PrimaryPodLabels)
 
 	if !*serviceConfig.Web.Enabled {
 		delete(desiredServiceMap, "web")

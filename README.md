@@ -1,8 +1,22 @@
 # pihole-ha-operator
-// TODO(user): Add simple overview of use/purpose
+A Kubernetes operator for deploying and managing a highly available Pi-hole cluster from custom resources.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Project status: active development (v1alpha1). The operator currently provides primary/standby failover, but it does not synchronize Pi-hole runtime data between replicas. After failover, the promoted replica may behave like a fresh Pi-hole instance until synchronization is implemented.
+
+## Overview
+The operator introduces two custom resources:
+- `PiHoleCluster` — declares the desired Pi-hole deployment and high-availability behavior.
+- `PiHoleConfig` — declares Pi-hole configuration such as adlists, CNAME records, additional hosts, and custom configuration.
+
+A minimal PiHoleCluster causes the operator to reconcile the Kubernetes resources required to run Pi-hole, including:
+- one StatefulSet;
+- a web Service;
+- a DNS Service;
+- an Ingress;
+- primary/standby pod roles;
+- cluster status, including the current primary pod.
+
+The intended default topology is three Pi-hole replicas with exactly one active primary.
 
 ## Getting Started
 
@@ -113,9 +127,6 @@ if you create webhooks, you need to use the above command with
 the '--force' flag and manually ensure that any custom configuration
 previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
 is manually re-applied afterwards.
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
 **NOTE:** Run `make help` for more information on all potential `make` targets
 
