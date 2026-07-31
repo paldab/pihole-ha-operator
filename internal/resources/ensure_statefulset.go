@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/paldab/pihole-ha-operator/internal/builders"
 	"github.com/paldab/pihole-ha-operator/internal/defaults"
@@ -28,17 +29,8 @@ func EnsureStatefulSet(rc *ResourceContext) error {
 	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster.Name)
 	podLabels := defaults.PiholePodLabels(rc.Cluster)
 
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      defaults.PiholeStatefulSetVolumeName,
-			MountPath: "/etc/pihole",
-		},
-	}
-
 	configVolumes, configVolumeMounts := getPiholeConfigVolumes(rc.Cluster.Name)
-	volumeMounts = append(volumeMounts, configVolumeMounts...)
-	containers := builders.BuildPiholeContainers(*rc.Cluster, volumeMounts)
-
+	containers := builders.BuildPiholeContainers(*rc.Cluster, configVolumeMounts)
 	desiredSts := builders.BuildPiholeStatefulSet(rc.Cluster, stsLabels, podLabels, containers, configVolumes)
 
 	currentSts := &appsv1.StatefulSet{
@@ -66,30 +58,49 @@ func EnsureStatefulSet(rc *ResourceContext) error {
 }
 
 func getPiholeConfigVolumes(clusterName string) ([]corev1.Volume, []corev1.VolumeMount) {
-	volumes := []corev1.Volume{}
-	volumeMounts := []corev1.VolumeMount{}
+	maxMounts := len(defaults.PiholeStaticMountConfig)
 
-	for component, config := range defaults.PiholeStaticMountConfig {
+	// first sort the list. Solving a bug where every reconciliation changes the order of the list causing k8s to think its a new patch
+	components := make([]string, 0, maxMounts)
+	for component := range defaults.PiholeStaticMountConfig {
+		components = append(components, string(component))
+	}
+
+	sort.Strings(components)
+
+	volumes := make([]corev1.Volume, 0, maxMounts)
+	volumeMounts := make([]corev1.VolumeMount, 0, maxMounts)
+
+	for _, key := range components {
+		component := defaults.PiholeComponent(key)
+		if component == defaults.StsVolumeName {
+			volumeMount := corev1.VolumeMount{
+				Name:      string(defaults.StsVolumeName),
+				MountPath: "/etc/pihole",
+			}
+
+			volumeMounts = append(volumeMounts, volumeMount)
+			continue
+		}
+
+		config := defaults.PiholeStaticMountConfig[component]
 		configmapName := defaults.GetConfigMapName(clusterName, string(component))
 		volumeName := fmt.Sprintf("pihole-%s", component)
 
-		volume := corev1.Volume{
+		volumes = append(volumes, corev1.Volume{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: configmapName},
 				},
 			},
-		}
+		})
 
-		volumeMount := corev1.VolumeMount{
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: config.MountPath,
 			SubPath:   config.Key,
-		}
-
-		volumes = append(volumes, volume)
-		volumeMounts = append(volumeMounts, volumeMount)
+		})
 	}
 
 	return volumes, volumeMounts

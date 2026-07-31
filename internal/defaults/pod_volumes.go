@@ -12,10 +12,11 @@ type PiholeVolumeConfig struct {
 type PiholeComponent string
 
 const (
-	Adlist   PiholeComponent = "adlist"
-	AddHosts PiholeComponent = "additional-hosts"
-	Custom   PiholeComponent = "custom-config"
-	CNAMEs   PiholeComponent = "cname"
+	StsVolumeName PiholeComponent = PiholeStatefulSetVolumeName
+	Adlist        PiholeComponent = "adlist"
+	AddHosts      PiholeComponent = "additional-hosts"
+	Custom        PiholeComponent = "custom-config"
+	CNAMEs        PiholeComponent = "cname"
 )
 
 type PiholeVolumeConfigMap map[PiholeComponent]PiholeVolumeConfig
@@ -28,6 +29,11 @@ const (
 )
 
 var PiholeStaticMountConfig = PiholeVolumeConfigMap{
+	StsVolumeName: PiholeVolumeConfig{
+		Key:       "",
+		MountPath: "/etc/pihole",
+	},
+
 	Adlist: PiholeVolumeConfig{
 		Key:       VolumeMountAdlistKey,
 		MountPath: "/etc/pihole/adlists.list",
