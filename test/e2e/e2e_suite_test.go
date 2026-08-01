@@ -67,20 +67,20 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	// By("building the manager image")
-	// cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", managerImage))
-	// _, err := utils.Run(cmd)
-	// ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager image")
+	By("building the manager image")
+	cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", managerImage))
+	_, err := utils.Run(cmd)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager image")
 
 	// TODO(user): If you want to change the e2e test vendor from Kind,
 	// ensure the image is built and available, then remove the following block.
 
 	By("loading the manager image on Kind")
-	err := utils.LoadImageToKindClusterWithName(managerImage)
+	err = utils.LoadImageToKindClusterWithName(managerImage)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager image into Kind")
 
-	// configureKubectlKubeRC()
-	// setupCertManager()
+	configureKubectlKubeRC()
+	setupCertManager()
 
 	By("creating the e2e test namespace")
 	utils.CreateE2ETestNamespace(namespace)
