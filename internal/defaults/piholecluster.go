@@ -11,15 +11,12 @@ import (
 )
 
 func ApplyDefaultClusterValues(obj *piholev1alpha1.PiHoleCluster) {
-	// if obj.Spec.Replicas == nil {
-	// 	obj.Spec.Replicas = new(int32(DefaultReplicas))
-	// }
-
 	defaultConfig(obj)
 	defaultStorage(obj)
 	defaultServices(obj)
 	defaultIngress(obj)
 	defaultDNSUpstream(obj)
+	DefaultStatisticsObj(obj)
 }
 
 func defaultConfig(obj *piholev1alpha1.PiHoleCluster) {

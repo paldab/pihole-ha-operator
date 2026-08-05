@@ -108,3 +108,21 @@ func (options *CustomOptions) ToPiholeConfigString() string {
 
 	return stringifiedData
 }
+
+type StatisticsSyncConfig struct {
+	Mode     StatsMode            `json:"mode"`
+	External *ExternalStatsConfig `json:"external"`
+}
+
+type StatsMode string
+
+const (
+	StatsModeLocal    StatsMode = "local"
+	StatsModeExternal StatsMode = "external"
+)
+
+type ExternalStatsConfig struct {
+	// +kubebuilder:default:=60
+	ExportIntervalSeconds int `json:"exportIntervalSeconds"`
+	BatchSize             int `json:"batchSize"`
+}

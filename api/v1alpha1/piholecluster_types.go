@@ -56,6 +56,8 @@ type PiHoleClusterSpec struct {
 
 	// +optional
 	Ingress *PiHoleIngressSpec `json:"ingress,omitempty"`
+
+	Statistics *StatisticsSyncConfig `json:"statistics"`
 }
 
 // PiHoleClusterStatus defines the observed state of PiHoleCluster.
