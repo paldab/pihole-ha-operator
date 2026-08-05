@@ -18,14 +18,13 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 )
@@ -36,26 +35,36 @@ var _ = Describe("PiHoleConfig Controller", func() {
 			resourceName      = "test-resource"
 			resourceNamespace = "default"
 		)
+		var clusterName = fmt.Sprintf("%s-cluster", resourceName)
 
 		ctx := context.Background()
 
-		typeNamespacedName := types.NamespacedName{
+		typeNamespacedNameCluster := types.NamespacedName{
+			Name:      clusterName,
+			Namespace: resourceNamespace,
+		}
+
+		typeNamespacedNameConfig := types.NamespacedName{
 			Name:      resourceName,
 			Namespace: resourceNamespace,
 		}
-		piholeconfig := &piholev1alpha1.PiHoleConfig{}
+
+		piholecluster := piholev1alpha1.PiHoleCluster{}
+		piholeconfig := piholev1alpha1.PiHoleConfig{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind PiHoleConfig")
-			err := k8sClient.Get(ctx, typeNamespacedName, piholeconfig)
+			By("creating the custom resource for the Kind PiHoleCluster")
+			err := k8sClient.Get(ctx, typeNamespacedNameCluster, &piholecluster)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &piholev1alpha1.PiHoleConfig{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: resourceNamespace,
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
+				resource := createMinimalCluster(typeNamespacedNameConfig)
+				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+			}
+
+			By("creating the custom resource for the Kind PiHoleConfig")
+			err = k8sClient.Get(ctx, typeNamespacedNameConfig, &piholeconfig)
+			if err != nil && errors.IsNotFound(err) {
+				resource := createMinimalConfig(typeNamespacedNameConfig, clusterName)
+				fmt.Println(typeNamespacedNameConfig, piholecluster.Name)
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
 		})
@@ -63,7 +72,7 @@ var _ = Describe("PiHoleConfig Controller", func() {
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &piholev1alpha1.PiHoleConfig{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
+			err := k8sClient.Get(ctx, typeNamespacedNameConfig, resource)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Cleanup the specific resource instance PiHoleConfig")
@@ -77,7 +86,7 @@ var _ = Describe("PiHoleConfig Controller", func() {
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
+				NamespacedName: typeNamespacedNameConfig,
 			})
 			Expect(err).NotTo(HaveOccurred())
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.

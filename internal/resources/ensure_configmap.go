@@ -13,6 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	checksumAnnotation = "checksum/config"
+)
+
 func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, config *v1alpha1.PiHoleConfig, component string) *corev1.ConfigMap {
 	configmapName := defaults.GetConfigMapName(cluster.Name, component)
 	operatorLabels := defaults.PiholeOperatorLabels(cluster.Name)
@@ -39,7 +43,7 @@ func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 	}
 
 	configmap.Annotations = map[string]string{
-		"checksum/config": checksum,
+		checksumAnnotation: checksum,
 	}
 
 	stringifiedData := config.Spec.Adlists.ArrayToString()
@@ -67,7 +71,7 @@ func EnsureCNAMEConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) er
 	}
 
 	configmap.Annotations = map[string]string{
-		"checksum/config": checksum,
+		checksumAnnotation: checksum,
 	}
 
 	stringifiedData := config.Spec.CNAMEs.ToPiholeConfigString()
@@ -96,7 +100,7 @@ func EnsureAdditionalHostsConfigmap(rc *ResourceContext, config *v1alpha1.PiHole
 	}
 
 	configmap.Annotations = map[string]string{
-		"checksum/config": checksum,
+		checksumAnnotation: checksum,
 	}
 
 	stringifiedData := config.Spec.Hosts.ToPiholeConfigString()
@@ -125,7 +129,7 @@ func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 	}
 
 	configmap.Annotations = map[string]string{
-		"checksum/config": checksum,
+		checksumAnnotation: checksum,
 	}
 
 	stringifiedData := config.Spec.CustomOptions.ToPiholeConfigString()

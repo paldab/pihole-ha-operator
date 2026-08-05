@@ -2,7 +2,7 @@ package resources
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/paldab/pihole-ha-operator/internal/builders"
 	"github.com/paldab/pihole-ha-operator/internal/defaults"
@@ -66,7 +66,7 @@ func getPiholeConfigVolumes(clusterName string) ([]corev1.Volume, []corev1.Volum
 		components = append(components, string(component))
 	}
 
-	sort.Strings(components)
+	slices.Sort(components)
 
 	volumes := make([]corev1.Volume, 0, maxMounts)
 	volumeMounts := make([]corev1.VolumeMount, 0, maxMounts)

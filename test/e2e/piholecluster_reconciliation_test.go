@@ -5,6 +5,7 @@ package e2e
 
 import (
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,9 +31,7 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 		namespace       = "pihole-ha-operator-system"
 	)
 
-	const (
-		defaultReplicas = "3"
-	)
+	var cluster v1alpha1.PiHoleCluster
 
 	BeforeEach(func() {
 		By("creating the Pi-hole admin password Secret")
@@ -50,6 +49,25 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 
 		_, err := utils.Run(cmd)
 		Expect(err).NotTo(HaveOccurred())
+
+		By("Creating minimal cluster")
+		cluster = v1alpha1.PiHoleCluster{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "pihole.paldab.nl/v1alpha1",
+				Kind:       "PiHoleCluster",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      clusterName,
+				Namespace: namespace,
+			},
+			Spec: v1alpha1.PiHoleClusterSpec{
+				Image:                       piholeImage,
+				Replicas:                    new(int32(3)),
+				ExistingAdminPasswordSecret: adminSecretName,
+			},
+		}
+
+		utils.CreatePiholeCluster(&cluster, namespace)
 	})
 
 	AfterEach(func() {
@@ -81,24 +99,7 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 	})
 
 	Context("PiHoleCLuster reconciliation", func() {
-		It("applies a basic piholecluster CR and deletes it", func() {
-			cluster := v1alpha1.PiHoleCluster{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "pihole.paldab.nl/v1alpha1",
-					Kind:       "PiHoleCluster",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      clusterName,
-					Namespace: namespace,
-				},
-				Spec: v1alpha1.PiHoleClusterSpec{
-					Image:                       piholeImage,
-					ExistingAdminPasswordSecret: adminSecretName,
-				},
-			}
-
-			utils.CreatePiholeCluster(&cluster, namespace)
-
+		It("ensuring subresources of piholecluster have been created", func() {
 			By("verifying that statefulset has been created")
 			Eventually(func() error {
 				cmd := exec.Command("kubectl", "get", "statefulset", clusterName, "--namespace", namespace)
@@ -109,7 +110,7 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 			}, 1*time.Minute, 2*time.Second).Should(Succeed())
 
 			By("verifying that statefulset configuration is correct")
-			Eventually(func() error {
+			Eventually(func() (string, error) {
 				cmd := exec.Command(
 					"kubectl",
 					"get",
@@ -124,50 +125,61 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 				out, err := utils.Run(cmd)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(out).Should(Equal("3"))
-				return nil
-			})
 
-			utils.DeletePiholeCluster(&cluster, namespace)
+				return out, err
+			}).Should(Equal(strconv.Itoa(int(*cluster.Spec.Replicas))))
 
-			By("verifying the PiHoleCluster was deleted")
+			It("should correctly delete all sub resources of pihole cluster", func() {
+				By("verifying that statefulset has been created")
+				Eventually(func() error {
+					cmd := exec.Command("kubectl", "get", "statefulset", clusterName, "--namespace", namespace)
 
-			Eventually(func() (string, error) {
-				cmd := exec.Command(
-					"kubectl",
-					"get",
-					"piholecluster",
-					clusterName,
-					"--namespace",
-					namespace,
-					"--ignore-not-found",
-					"-o",
-					"name",
-				)
+					_, err := utils.Run(cmd)
+					Expect(err).NotTo(HaveOccurred())
+					return err
+				}, 1*time.Minute, 2*time.Second).Should(Succeed())
 
-				output, err := utils.Run(cmd)
-				return strings.TrimSpace(output), err
-			}, time.Minute, 2*time.Second).Should(BeEmpty())
+				utils.DeletePiholeCluster(&cluster, namespace)
 
-			By("verifying the statefulset was deleted")
-			Eventually(func() error {
-				cmd := exec.Command(
-					"kubectl",
-					"get",
-					"statefulset",
-					cluster.Name,
-					"-n",
-					namespace,
-					"--ignore-not-found",
-					"-o",
-					"name",
-				)
-				output, err := utils.Run(cmd)
+				By("verifying the PiHoleCluster was deleted")
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(strings.TrimSpace(output)).To(BeEmpty())
+				Eventually(func() (string, error) {
+					cmd := exec.Command(
+						"kubectl",
+						"get",
+						"piholecluster",
+						clusterName,
+						"--namespace",
+						namespace,
+						"--ignore-not-found",
+						"-o",
+						"name",
+					)
 
-				return err
+					output, err := utils.Run(cmd)
+					return strings.TrimSpace(output), err
+				}, time.Minute, 2*time.Second).Should(BeEmpty())
+
+				By("verifying the statefulset was deleted")
+				Eventually(func() error {
+					cmd := exec.Command(
+						"kubectl",
+						"get",
+						"statefulset",
+						cluster.Name,
+						"-n",
+						namespace,
+						"--ignore-not-found",
+						"-o",
+						"name",
+					)
+					output, err := utils.Run(cmd)
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(strings.TrimSpace(output)).To(BeEmpty())
+
+					return err
+				}).Should(Succeed())
 			})
 		})
 	})

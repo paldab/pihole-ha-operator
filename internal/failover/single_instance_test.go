@@ -16,12 +16,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+const (
+	defaultSinglePodName = "pihole-0"
+	defaultNamespace     = "default"
+)
+
 func TestReconcileFailoverSingleInstance_HealthyPodWithoutRoleBecomesPrimary(
 	t *testing.T,
 ) {
 	ctx := context.Background()
 
-	pod := newSingleInstancePod("pihole-0", "", true)
+	pod := newSingleInstancePod(defaultSinglePodName, "", true)
 	k8sClient := newSingleInstanceFakeClient(t, pod.DeepCopy())
 
 	_, err := failover.ReconcileFailoverSingleInstance(
@@ -49,7 +54,7 @@ func TestReconcileFailoverSingleInstance_HealthyStandbyBecomesPrimary(
 ) {
 	ctx := context.Background()
 
-	pod := newSingleInstancePod("pihole-0", "standby", true)
+	pod := newSingleInstancePod(defaultSinglePodName, "standby", true)
 	k8sClient := newSingleInstanceFakeClient(t, pod.DeepCopy())
 
 	_, err := failover.ReconcileFailoverSingleInstance(
@@ -77,7 +82,7 @@ func TestReconcileFailoverSingleInstance_HealthyPrimaryRemainsPrimary(
 ) {
 	ctx := context.Background()
 
-	pod := newSingleInstancePod("pihole-0", "primary", true)
+	pod := newSingleInstancePod(defaultSinglePodName, "primary", true)
 	k8sClient := newSingleInstanceFakeClient(t, pod.DeepCopy())
 
 	result, err := failover.ReconcileFailoverSingleInstance(
@@ -90,7 +95,7 @@ func TestReconcileFailoverSingleInstance_HealthyPrimaryRemainsPrimary(
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.Requeue || result.RequeueAfter != 0 {
+	if result.RequeueAfter != 0 {
 		t.Fatalf("expected no requeue, got %+v", result)
 	}
 
@@ -109,7 +114,7 @@ func TestReconcileFailoverSingleInstance_UnhealthyPodIsNotPromoted(
 ) {
 	ctx := context.Background()
 
-	pod := newSingleInstancePod("pihole-0", "", false)
+	pod := newSingleInstancePod(defaultSinglePodName, "", false)
 	k8sClient := newSingleInstanceFakeClient(t, pod.DeepCopy())
 
 	result, err := failover.ReconcileFailoverSingleInstance(
@@ -144,7 +149,7 @@ func TestReconcileFailoverSingleInstance_TerminatingPodIsNotPromoted(
 ) {
 	ctx := context.Background()
 
-	pod := newSingleInstancePod("pihole-0", "", true)
+	pod := newSingleInstancePod(defaultSinglePodName, "", true)
 	now := metav1.Now()
 	pod.DeletionTimestamp = &now
 	pod.Finalizers = []string{"test.example/finalizer"}
@@ -179,7 +184,7 @@ func TestReconcileFailoverSingleInstance_TerminatingPodIsNotPromoted(
 }
 
 func newSingleInstancePod(
-	name string,
+	name string, //nolint:unparam
 	role string,
 	ready bool,
 ) *corev1.Pod {
@@ -197,7 +202,7 @@ func newSingleInstancePod(
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: defaultNamespace,
 			Labels:    labels,
 		},
 		Status: corev1.PodStatus{

@@ -11,6 +11,10 @@ import (
 )
 
 func ApplyDefaultClusterValues(obj *piholev1alpha1.PiHoleCluster) {
+	// if obj.Spec.Replicas == nil {
+	// 	obj.Spec.Replicas = new(int32(DefaultReplicas))
+	// }
+
 	defaultConfig(obj)
 	defaultStorage(obj)
 	defaultServices(obj)
@@ -142,7 +146,7 @@ func AdditionalPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar
 }
 
 func DefaultPiholeContainerPorts(webPort, dnsPort int32, dhcpEnabled bool) []corev1.ContainerPort {
-	webPorts := []corev1.ContainerPort{
+	webPorts := []corev1.ContainerPort{ //nolint:prealloc
 		{
 			Name:          "http",
 			ContainerPort: webPort,
@@ -223,4 +227,14 @@ func DefaultProbesObj() map[string]*corev1.Probe {
 		},
 	}
 
+}
+
+func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
+	if obj.Spec.Statistics == nil {
+		obj.Spec.Statistics = &piholev1alpha1.StatisticsSyncConfig{
+			Mode: piholev1alpha1.StatsMode("local"),
+		}
+
+		obj.Spec.Statistics.External = &piholev1alpha1.ExternalStatsConfig{}
+	}
 }

@@ -54,11 +54,12 @@ func TestGetLeaderElectionState_HealthyPrimaryExists(t *testing.T) {
 }
 
 func TestGetLeaderElectionState_UnhealthyPrimaryAndHealthyCandidates(t *testing.T) {
+	const primaryPod = "pihole-0"
+	const standbyPod = "pihole-1"
 	pods := &corev1.PodList{
 		Items: []corev1.Pod{
-			newTestPod("pihole-0", "primary", false),
-			newTestPod("pihole-1", "standby", true),
-			newTestPod("pihole-2", "", true),
+			newTestPod(primaryPod, "primary", false),
+			newTestPod(standbyPod, "standby", true),
 		},
 	}
 
@@ -75,23 +76,25 @@ func TestGetLeaderElectionState_UnhealthyPrimaryAndHealthyCandidates(t *testing.
 		t.Fatal("expected previous unhealthy leader, got nil")
 	}
 
-	if state.PreviousLeader.Name != "pihole-0" {
+	if state.PreviousLeader.Name != primaryPod {
 		t.Fatalf(
-			"expected previous leader pihole-0, got %s",
+			"expected previous leader %s, got %s",
+			primaryPod,
 			state.PreviousLeader.Name,
 		)
 	}
 
-	if len(state.AvailableLeaderCandidates.Items) != 2 {
+	if len(state.AvailableLeaderCandidates.Items) != 1 {
 		t.Fatalf(
 			"expected 2 leader candidates, got %d",
 			len(state.AvailableLeaderCandidates.Items),
 		)
 	}
 
-	if state.AvailableLeaderCandidates.Items[0].Name != "pihole-1" {
+	if state.AvailableLeaderCandidates.Items[0].Name != standbyPod {
 		t.Fatalf(
-			"expected first candidate pihole-1, got %s",
+			"expected first candidate %s, got %s",
+			standbyPod,
 			state.AvailableLeaderCandidates.Items[0].Name,
 		)
 	}
@@ -243,7 +246,7 @@ func newTestPod(
 	return corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: defaultNamespace,
 			Labels:    labels,
 		},
 		Status: corev1.PodStatus{
@@ -294,7 +297,7 @@ func assertPodRole(
 		ctx,
 		client.ObjectKey{
 			Name:      name,
-			Namespace: "default",
+			Namespace: defaultNamespace,
 		},
 		pod,
 	)

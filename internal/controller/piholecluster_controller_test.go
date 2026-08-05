@@ -25,8 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 )
 
@@ -49,17 +47,7 @@ var _ = Describe("PiHoleCluster Controller", func() {
 			By("creating the custom resource for the Kind PiHoleCluster")
 			err := k8sClient.Get(ctx, typeNamespacedName, piholecluster)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &piholev1alpha1.PiHoleCluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: resourceNamespace,
-					},
-					// TODO(user): Specify other spec details if needed.
-					Spec: piholev1alpha1.PiHoleClusterSpec{
-						ExistingAdminPasswordSecret: "test-admin-password",
-						Image:                       "pihole/pihole:latest",
-					},
-				}
+				resource := createMinimalCluster(typeNamespacedName)
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
 		})

@@ -42,12 +42,12 @@ func TestMergeMap_EmptyOverride(t *testing.T) {
 	newMapNil := utils.MergeMap(baseMap, overrideMapNil)
 
 	if !maps.Equal(baseMap, newMapNil) {
-		t.Fatal("MergeMap function should not have changed anything in the newMap but changes happend")
+		t.Fatal("MergeMap function should not have changed anything in the newMap but changes happened")
 	}
 
 	var overrideMap = make(map[string]string)
 	newMap := utils.MergeMap(baseMap, overrideMap)
 	if !maps.Equal(baseMap, newMap) {
-		t.Fatal("MergeMap function should not have changed anything in the newMap but changes happend")
+		t.Fatal("MergeMap function should not have changed anything in the newMap but changes happened")
 	}
 }

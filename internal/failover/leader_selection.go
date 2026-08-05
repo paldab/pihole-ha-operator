@@ -69,7 +69,13 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 	}
 
 	// Make other available pods to standby
-	HandleStandbyPodsWithoutRole(ctx, k8sClient, electionState, &newLeaderName)
+	if err = HandleStandbyPodsWithoutRole(ctx, k8sClient, electionState, &newLeaderName); err != nil {
+		return FailoverResult{
+			InProgress: false,
+			Leader:     nil,
+			Reason:     ReasonPromotionFailed,
+		}, err
+	}
 
 	return FailoverResult{
 		InProgress: false,

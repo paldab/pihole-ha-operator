@@ -9,6 +9,7 @@ import (
 const (
 	ApplicationName = "pihole"
 	ProbeURL        = "http://localhost/api/info/login"
+	DefaultReplicas = 3
 
 	StorageSize         = "3Gi"
 	WebserverPort int32 = 80
