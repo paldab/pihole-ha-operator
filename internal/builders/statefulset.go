@@ -22,8 +22,8 @@ func BuildPiholeStatefulSet(cluster *piholev1alpha1.PiHoleCluster, labels, podLa
 				MatchLabels: podLabels,
 			},
 			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
-				WhenDeleted: "Retain", //TODO: This should go to delete whenever we have syncing between all pods
-				WhenScaled:  "Retain",
+				WhenDeleted: "Delete",
+				WhenScaled:  "Delete",
 			},
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
@@ -71,7 +71,7 @@ func BuildPiholeContainers(cluster piholev1alpha1.PiHoleCluster, volumeMounts []
 	additionalEnvs := defaults.AdditionalPiholeEnvs(&cluster)
 	containerEnvs := append(requiredEnvs, additionalEnvs...)
 	piholeEnvs := append(containerEnvs, cluster.Spec.Config.Env...)
-	containerPorts := defaults.DefaultPiholeContainerPorts(defaults.WebserverPort, defaults.DNSPort, false) // TODO make dynamic dhcp paramter
+	containerPorts := defaults.DefaultPiholeContainerPorts(defaults.WebserverPort, defaults.DNSPort, false) // TODO make dynamic dhcp parameter
 
 	return []corev1.Container{
 		{

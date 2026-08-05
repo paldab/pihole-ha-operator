@@ -35,7 +35,7 @@ type PiHoleClusterSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	ExistingAdminPasswordSecret string `json:"existingAdminPasswordSecret"`
 
-	// +kubebuilder:default:=2
+	// +kubebuilder:default:=3
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// +optional
