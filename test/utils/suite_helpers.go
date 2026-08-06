@@ -31,7 +31,7 @@ func InstallCrds() {
 }
 
 // CreateObjectIfNotExists expects a kubectl create string args like ("kubectl", "create", "clusterrolebinding", "test")
-func CreateObjectIfNotExists(command string, args ...string) {
+func CreateObjectIfNotExists(command string, args ...string) error {
 	createCmd := exec.Command(command, args...)
 	manifest, err := createCmd.Output()
 	Expect(err).NotTo(HaveOccurred())
@@ -40,5 +40,6 @@ func CreateObjectIfNotExists(command string, args ...string) {
 	applyCmd.Stdin = bytes.NewReader(manifest)
 
 	_, err = Run(applyCmd)
-	Expect(err).NotTo(HaveOccurred(), "Failed to apply object")
+
+	return err
 }

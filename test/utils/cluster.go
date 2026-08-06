@@ -55,3 +55,19 @@ func DeletePiholeCluster(cluster *v1alpha1.PiHoleCluster, namespace string) {
 		"failed to delete PiHoleCluster: %s",
 	)
 }
+
+func PatchPiholeCluster(cluster *v1alpha1.PiHoleCluster, patchSpec string) (string, error) {
+	cmd := exec.Command(
+		"kubectl",
+		"patch",
+		"piholecluster",
+		cluster.Name,
+		"-n",
+		cluster.Namespace,
+		"--type=merge",
+		"-p",
+		patchSpec,
+	)
+
+	return Run(cmd)
+}

@@ -81,7 +81,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 		It("should ensure the metrics endpoint is serving metrics", func() {
 			By("creating a ClusterRoleBinding for the service account to allow access to metrics")
-			utils.CreateObjectIfNotExists("kubectl",
+			err := utils.CreateObjectIfNotExists("kubectl",
 				"create",
 				"clusterrolebinding",
 				metricsRoleBindingName,
@@ -92,9 +92,11 @@ var _ = Describe("Manager", Ordered, func() {
 				"yaml",
 			)
 
+			Expect(err).NotTo(HaveOccurred(), "Failed to apply ClusterRoleBinding")
+
 			By("validating that the metrics service is available")
 			cmd := exec.Command("kubectl", "get", "service", metricsServiceName, "-n", namespace)
-			_, err := utils.Run(cmd)
+			_, err = utils.Run(cmd)
 			Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")
 
 			By("getting the service account token")
