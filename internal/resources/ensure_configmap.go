@@ -3,7 +3,6 @@ package resources
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/builders"
 	"github.com/paldab/pihole-ha-operator/internal/defaults"
@@ -162,28 +161,4 @@ func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 	})
 
 	return err
-}
-
-func EnsureAllPiholeConfigurationConfigmaps(rc *ResourceContext, log logr.Logger, config *v1alpha1.PiHoleConfig) error {
-	if err := EnsureAdListConfigmap(rc, config); err != nil {
-		log.Error(err, "something went wrong when ensuring the adlist configmap", "config", config.Name)
-		return err
-	}
-
-	if err := EnsureCNAMEConfigmap(rc, config); err != nil {
-		log.Error(err, "something went wrong when ensuring the CNAME configmap", "config", config.Name)
-		return err
-	}
-
-	if err := EnsureAdditionalHostsConfigmap(rc, config); err != nil {
-		log.Error(err, "something went wrong when ensuring the Additional Hosts configmap", "config", config.Name)
-		return err
-	}
-
-	if err := EnsureCustomConfigMap(rc, config); err != nil {
-		log.Error(err, "something went wrong when ensuring the Custom Settings configmap", "config", config.Name)
-		return err
-	}
-
-	return nil
 }

@@ -82,11 +82,6 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Scheme:    r.Scheme,
 	}
 
-	// if err := resources.EnsureAllPiholeConfigurationConfigmaps(&resourceContext, log, nil); err != nil {
-	// 	log.Error(err, "failed to ensure all pihole configuration configmaps")
-	// 	return ctrl.Result{}, err
-	// }
-
 	if err := resources.EnsureStatefulSet(&resourceContext); err != nil {
 		log.Error(err, "failed to reconcile StatefulSet")
 		return ctrl.Result{}, err
