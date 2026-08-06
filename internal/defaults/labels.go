@@ -23,9 +23,13 @@ var StandbyPodLabels = map[string]string{
 
 func PiholeOperatorLabels(clusterName string) map[string]string {
 	return map[string]string{
+		"app.kubernetes.io/name":       "pihole",
 		"app.kubernetes.io/managed-by": "pihole-ha-operator",
-		"paldab.nl/cluster":            clusterName,
+		"app.kubernetes.io/instance":   clusterName,
+		"app.kubernetes.io/part-of":    "pihole-ha",
 		// "app.kubernetes.io/version":    imageTag, TODO
+
+		"paldab.nl/cluster": clusterName,
 	}
 }
 

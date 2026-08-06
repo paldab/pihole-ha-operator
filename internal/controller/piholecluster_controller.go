@@ -22,6 +22,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,16 +46,11 @@ type PiHoleClusterReconciler struct {
 // +kubebuilder:rbac:groups=pihole.paldab.nl,resources=piholeclusters/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the PiHoleCluster object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.24.1/pkg/reconcile
 
 func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
@@ -62,6 +58,11 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	var piholeCluster piholev1alpha1.PiHoleCluster
 
 	if err := r.Get(ctx, req.NamespacedName, &piholeCluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			// Object was deleted
+			return ctrl.Result{}, nil
+		}
+
 		log.Error(err, "could not find requested pihole cluster!", "piholecluster", req.Name)
 		return ctrl.Result{}, nil
 	}
@@ -80,6 +81,11 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Cluster:   clusterCopy,
 		Scheme:    r.Scheme,
 	}
+
+	// if err := resources.EnsureAllPiholeConfigurationConfigmaps(&resourceContext, log, nil); err != nil {
+	// 	log.Error(err, "failed to ensure all pihole configuration configmaps")
+	// 	return ctrl.Result{}, err
+	// }
 
 	if err := resources.EnsureStatefulSet(&resourceContext); err != nil {
 		log.Error(err, "failed to reconcile StatefulSet")

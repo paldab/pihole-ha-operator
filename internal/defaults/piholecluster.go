@@ -223,7 +223,6 @@ func DefaultProbesObj() map[string]*corev1.Probe {
 			ProbeHandler:        defaultProbeHandler,
 		},
 	}
-
 }
 
 func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {

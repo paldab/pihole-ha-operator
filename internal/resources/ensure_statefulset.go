@@ -92,6 +92,7 @@ func getPiholeConfigVolumes(clusterName string) ([]corev1.Volume, []corev1.Volum
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: configmapName},
+					Optional:             new(true),
 				},
 			},
 		})

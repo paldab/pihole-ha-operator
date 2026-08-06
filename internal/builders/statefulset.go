@@ -19,12 +19,13 @@ func BuildPiholeStatefulSet(cluster *piholev1alpha1.PiHoleCluster, labels, podLa
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: cluster.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: podLabels,
+				MatchLabels: labels,
 			},
 			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
 				WhenDeleted: "Delete",
 				WhenScaled:  "Delete",
 			},
+			PodManagementPolicy: appsv1.ParallelPodManagement,
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{

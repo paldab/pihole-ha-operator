@@ -3,6 +3,7 @@ package resources
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/builders"
 	"github.com/paldab/pihole-ha-operator/internal/defaults"
@@ -17,7 +18,7 @@ const (
 	checksumAnnotation = "checksum/config"
 )
 
-func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, config *v1alpha1.PiHoleConfig, component string) *corev1.ConfigMap {
+func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, component string) *corev1.ConfigMap {
 	configmapName := defaults.GetConfigMapName(cluster.Name, component)
 	operatorLabels := defaults.PiholeOperatorLabels(cluster.Name)
 
@@ -28,30 +29,35 @@ func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, config *v1alpha1.PiHole
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      configmapName,
-			Namespace: config.Namespace,
+			Namespace: cluster.Namespace,
 			Labels:    mergedLabels,
 		},
 	}
 }
 
 func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, config, "adlist")
-	checksum, err := utils.CalculateChecksum(config.Spec.Adlists)
+	configmap := buildBaseConfigmap(rc.Cluster, "adlist")
+	stringifiedData := ""
 
-	if err != nil {
-		return err
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.Adlists)
+
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = config.Spec.Adlists.ArrayToString()
 	}
 
-	configmap.Annotations = map[string]string{
-		checksumAnnotation: checksum,
-	}
-
-	stringifiedData := config.Spec.Adlists.ArrayToString()
 	configmapStringData := map[string]string{
 		defaults.VolumeMountAdlistKey: stringifiedData,
 	}
 
-	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
 		desired := builders.BuildConfigmap(configmapStringData)
 
 		configmap.Data = desired.Data
@@ -63,24 +69,27 @@ func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 }
 
 func EnsureCNAMEConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, config, "cname")
-	checksum, err := utils.CalculateChecksum(config.Spec.CNAMEs)
+	configmap := buildBaseConfigmap(rc.Cluster, "cname")
+	stringifiedData := ""
 
-	if err != nil {
-		return err
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.CNAMEs)
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = config.Spec.CNAMEs.ToPiholeConfigString()
 	}
-
-	configmap.Annotations = map[string]string{
-		checksumAnnotation: checksum,
-	}
-
-	stringifiedData := config.Spec.CNAMEs.ToPiholeConfigString()
 
 	configmapStringData := map[string]string{
 		defaults.VolumeMountCNAMEKey: stringifiedData,
 	}
 
-	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
 		desired := builders.BuildConfigmap(configmapStringData)
 
 		configmap.Data = desired.Data
@@ -92,24 +101,27 @@ func EnsureCNAMEConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) er
 }
 
 func EnsureAdditionalHostsConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, config, "additional-hosts")
-	checksum, err := utils.CalculateChecksum(config.Spec.Hosts)
+	configmap := buildBaseConfigmap(rc.Cluster, "additional-hosts")
+	stringifiedData := ""
 
-	if err != nil {
-		return err
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.Hosts)
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = config.Spec.Hosts.ToPiholeConfigString()
 	}
-
-	configmap.Annotations = map[string]string{
-		checksumAnnotation: checksum,
-	}
-
-	stringifiedData := config.Spec.Hosts.ToPiholeConfigString()
 
 	configmapStringData := map[string]string{
 		defaults.VolumeMountAddHostsKey: stringifiedData,
 	}
 
-	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
 		desired := builders.BuildConfigmap(configmapStringData)
 
 		configmap.Data = desired.Data
@@ -121,25 +133,28 @@ func EnsureAdditionalHostsConfigmap(rc *ResourceContext, config *v1alpha1.PiHole
 }
 
 func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, config, "custom-config")
-	checksum, err := utils.CalculateChecksum(config.Spec.CustomOptions)
+	configmap := buildBaseConfigmap(rc.Cluster, "custom-config")
+	stringifiedData := ""
 
-	if err != nil {
-		return err
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.CustomOptions)
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = config.Spec.CustomOptions.ToPiholeConfigString()
 	}
-
-	configmap.Annotations = map[string]string{
-		checksumAnnotation: checksum,
-	}
-
-	stringifiedData := config.Spec.CustomOptions.ToPiholeConfigString()
 
 	configmapStringData := map[string]string{
 		defaults.VolumeMountCustomKey: stringifiedData,
 	}
 
 	desired := builders.BuildConfigmap(configmapStringData)
-	_, err = controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
 
 		configmap.Data = desired.Data
 
@@ -147,4 +162,28 @@ func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 	})
 
 	return err
+}
+
+func EnsureAllPiholeConfigurationConfigmaps(rc *ResourceContext, log logr.Logger, config *v1alpha1.PiHoleConfig) error {
+	if err := EnsureAdListConfigmap(rc, config); err != nil {
+		log.Error(err, "something went wrong when ensuring the adlist configmap", "config", config.Name)
+		return err
+	}
+
+	if err := EnsureCNAMEConfigmap(rc, config); err != nil {
+		log.Error(err, "something went wrong when ensuring the CNAME configmap", "config", config.Name)
+		return err
+	}
+
+	if err := EnsureAdditionalHostsConfigmap(rc, config); err != nil {
+		log.Error(err, "something went wrong when ensuring the Additional Hosts configmap", "config", config.Name)
+		return err
+	}
+
+	if err := EnsureCustomConfigMap(rc, config); err != nil {
+		log.Error(err, "something went wrong when ensuring the Custom Settings configmap", "config", config.Name)
+		return err
+	}
+
+	return nil
 }
