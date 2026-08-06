@@ -56,6 +56,11 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	var piholeConfig piholev1alpha1.PiHoleConfig
 	if err := r.Get(ctx, req.NamespacedName, &piholeConfig); err != nil {
+		// Object was deleted
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
 		log.Error(err, "could not find requested pihole config!", "piholeconfig", req.Name)
 		return ctrl.Result{}, err
 	}

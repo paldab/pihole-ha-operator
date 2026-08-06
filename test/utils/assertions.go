@@ -1,5 +1,6 @@
 package utils
 
+//nolint:staticcheck
 import (
 	"fmt"
 	"os/exec"
@@ -48,7 +49,7 @@ func assertStatefulsetExists(cluster *v1alpha1.PiHoleCluster) bool {
 }
 
 func AssertStatefulDesiredReplicas(cluster *v1alpha1.PiHoleCluster, expectedReplicas int) bool {
-	By("verifying that statefulset configuration is correct by checking the if the replicas on cluster match the statefulset")
+	By("verifying that statefulset desired replicas match the pihole cluster replicas")
 
 	return Eventually(func() (string, error) {
 		cmd := exec.Command(

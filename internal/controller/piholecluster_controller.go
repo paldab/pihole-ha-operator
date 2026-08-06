@@ -58,8 +58,8 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	var piholeCluster piholev1alpha1.PiHoleCluster
 
 	if err := r.Get(ctx, req.NamespacedName, &piholeCluster); err != nil {
+		// Object was deleted
 		if apierrors.IsNotFound(err) {
-			// Object was deleted
 			return ctrl.Result{}, nil
 		}
 

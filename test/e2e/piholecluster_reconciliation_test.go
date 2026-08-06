@@ -189,7 +189,9 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 
 				return err
 
-			}, 2*time.Minute, 2*time.Second).Should(Succeed(), fmt.Sprintf("failed to patch cluster replicas to %d", newDesiredreplicas))
+			}, 2*time.Minute, 2*time.Second).Should(
+				Succeed(), fmt.Sprintf("failed to patch cluster replicas to %d", newDesiredreplicas),
+			)
 
 			By("changing the replicas on the cluster object down to 2")
 			newDesiredreplicas = 2
@@ -205,7 +207,9 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 				Expect(stsHasReadyReplicasAfterPatch).To(BeTrue())
 
 				return err
-			}, 2*time.Minute, 2*time.Second).Should(Succeed(), fmt.Sprintf("failed to patch cluster replicas to %d", newDesiredreplicas))
+			}, 2*time.Minute, 2*time.Second).Should(
+				Succeed(), fmt.Sprintf("failed to patch cluster replicas to %d", newDesiredreplicas),
+			)
 		})
 
 		It("should correctly delete all sub resources of pihole cluster", func() {
