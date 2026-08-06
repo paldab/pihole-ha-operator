@@ -19,5 +19,5 @@ stringData:
   password: "admin"
 kind: Secret
 metadata:
-  name: pihole-admin-password
+  name: pihole-admin-password-test
 type: Opaque

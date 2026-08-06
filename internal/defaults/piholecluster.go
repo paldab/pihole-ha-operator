@@ -110,6 +110,10 @@ func RequiredPiholeEnvs(secretName, timezone string, webserverPort int32, DNSUps
 				},
 			},
 		},
+		{
+			Name:  "FTLCONF_files_database",
+			Value: PiholeFTLDBPath,
+		},
 	}
 }
 
@@ -228,7 +232,7 @@ func DefaultProbesObj() map[string]*corev1.Probe {
 func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
 	if obj.Spec.Statistics == nil {
 		obj.Spec.Statistics = &piholev1alpha1.StatisticsSyncConfig{
-			Mode: piholev1alpha1.StatsMode("local"),
+			Mode: piholev1alpha1.StatsModeLocal,
 		}
 
 		obj.Spec.Statistics.External = &piholev1alpha1.ExternalStatsConfig{}

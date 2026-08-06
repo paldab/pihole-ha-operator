@@ -10,6 +10,7 @@ const (
 	ApplicationName = "pihole"
 	ProbeURL        = "http://localhost/api/info/login"
 	DefaultReplicas = 3
+	PiholeFTLDBPath = "/etc/pihole/pihole-FTL.db"
 
 	StorageSize         = "3Gi"
 	WebserverPort int32 = 80
