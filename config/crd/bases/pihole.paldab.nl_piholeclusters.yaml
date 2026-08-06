@@ -2289,6 +2289,25 @@ spec:
                       rule: '!has(self.loadBalancerIP) || (has(self.type) && self.type
                         == ''LoadBalancer'')'
                 type: object
+              statistics:
+                properties:
+                  external:
+                    properties:
+                      batchSize:
+                        type: integer
+                      exportIntervalSeconds:
+                        default: 60
+                        type: integer
+                    required:
+                    - batchSize
+                    - exportIntervalSeconds
+                    type: object
+                  mode:
+                    type: string
+                required:
+                - external
+                - mode
+                type: object
               storage:
                 properties:
                   size:

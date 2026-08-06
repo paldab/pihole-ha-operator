@@ -57,6 +57,7 @@ type PiHoleClusterSpec struct {
 	// +optional
 	Ingress *PiHoleIngressSpec `json:"ingress,omitempty"`
 
+	// +optional
 	Statistics *StatisticsSyncConfig `json:"statistics"`
 }
 
