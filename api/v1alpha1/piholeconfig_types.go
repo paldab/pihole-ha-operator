@@ -30,6 +30,15 @@ type PiHoleConfigSpec struct {
 	Adlists AdList `json:"adlists"`
 
 	// +optional
+	Blacklist List `json:"blacklist"`
+
+	// +optional
+	Whitelist List `json:"whitelist"`
+
+	// +optional
+	Regexlist RegexList `json:"regexlist"`
+
+	// +optional
 	CNAMEs CNAMERecords `json:"cnames"`
 
 	// +optional

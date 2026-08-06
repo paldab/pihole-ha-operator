@@ -97,24 +97,16 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Scheme:    r.Scheme,
 	}
 
-	if err := resources.EnsureAdListConfigmap(&resourceContext, configCopy); err != nil {
-		log.Error(err, "something went wrong when ensuring the adlist configmap", "config", piholeConfig.Name)
-		return ctrl.Result{}, err
-	}
+	// Fill configmaps with data
+	for component := range defaults.PiholeStaticMountConfig {
+		if component == defaults.StsVolumeName {
+			continue
+		}
 
-	if err := resources.EnsureCNAMEConfigmap(&resourceContext, configCopy); err != nil {
-		log.Error(err, "something went wrong when ensuring the CNAME configmap", "config", piholeConfig.Name)
-		return ctrl.Result{}, err
-	}
-
-	if err := resources.EnsureAdditionalHostsConfigmap(&resourceContext, configCopy); err != nil {
-		log.Error(err, "something went wrong when ensuring the Additional Hosts configmap", "config", piholeConfig.Name)
-		return ctrl.Result{}, err
-	}
-
-	if err := resources.EnsureCustomConfigMap(&resourceContext, configCopy); err != nil {
-		log.Error(err, "something went wrong when ensuring the Custom Settings configmap", "config", piholeConfig.Name)
-		return ctrl.Result{}, err
+		if err := resources.CreateConfigmapWrapper(&resourceContext, configCopy, component); err != nil {
+			log.Error(err, "something went wrong when ensuring configmap", "config", piholeConfig.Name, "type", string(component))
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil

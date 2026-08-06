@@ -43,6 +43,10 @@ spec:
                 items:
                   type: string
                 type: array
+              blacklist:
+                items:
+                  type: string
+                type: array
               clusterRef:
                 properties:
                   name:
@@ -74,6 +78,14 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              regexlist:
+                items:
+                  type: string
+                type: array
+              whitelist:
+                items:
+                  type: string
+                type: array
             required:
             - clusterRef
             type: object

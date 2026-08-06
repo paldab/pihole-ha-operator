@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/builders"
@@ -10,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -35,7 +37,7 @@ func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, component string) *core
 }
 
 func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, "adlist")
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.Adlist))
 	stringifiedData := ""
 
 	if config != nil {
@@ -49,7 +51,7 @@ func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 			checksumAnnotation: checksum,
 		}
 
-		stringifiedData = config.Spec.Adlists.ArrayToString()
+		stringifiedData = v1alpha1.ArrayToString(config.Spec.Adlists)
 	}
 
 	configmapStringData := map[string]string{
@@ -61,14 +63,15 @@ func EnsureAdListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 
 		configmap.Data = desired.Data
 
-		return ctrl.SetControllerReference(config, configmap, rc.Scheme)
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
+
 	})
 
 	return err
 }
 
 func EnsureCNAMEConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, "cname")
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.CNAMEs))
 	stringifiedData := ""
 
 	if config != nil {
@@ -93,14 +96,14 @@ func EnsureCNAMEConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) er
 
 		configmap.Data = desired.Data
 
-		return ctrl.SetControllerReference(config, configmap, rc.Scheme)
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
 	})
 
 	return err
 }
 
 func EnsureAdditionalHostsConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, "additional-hosts")
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.AddHosts))
 	stringifiedData := ""
 
 	if config != nil {
@@ -125,14 +128,14 @@ func EnsureAdditionalHostsConfigmap(rc *ResourceContext, config *v1alpha1.PiHole
 
 		configmap.Data = desired.Data
 
-		return ctrl.SetControllerReference(config, configmap, rc.Scheme)
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
 	})
 
 	return err
 }
 
 func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
-	configmap := buildBaseConfigmap(rc.Cluster, "custom-config")
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.Custom))
 	stringifiedData := ""
 
 	if config != nil {
@@ -157,8 +160,189 @@ func EnsureCustomConfigMap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) e
 
 		configmap.Data = desired.Data
 
-		return ctrl.SetControllerReference(config, configmap, rc.Scheme)
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
 	})
 
 	return err
+}
+
+func EnsureBlacklistConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.Blacklist))
+	stringifiedData := ""
+
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.Blacklist)
+
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = v1alpha1.ArrayToString(config.Spec.Blacklist)
+	}
+
+	configmapStringData := map[string]string{
+		defaults.VolumeMountBlacklistKey: stringifiedData,
+	}
+
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+		desired := builders.BuildConfigmap(configmapStringData)
+
+		configmap.Data = desired.Data
+
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
+	})
+
+	return err
+}
+
+func EnsureWhitelistConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.Whitelist))
+	stringifiedData := ""
+
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.Whitelist)
+
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = v1alpha1.ArrayToString(config.Spec.Whitelist)
+	}
+
+	configmapStringData := map[string]string{
+		defaults.VolumeMountWhitelistKey: stringifiedData,
+	}
+
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+		desired := builders.BuildConfigmap(configmapStringData)
+
+		configmap.Data = desired.Data
+
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
+	})
+
+	return err
+}
+
+func EnsureRegexListConfigmap(rc *ResourceContext, config *v1alpha1.PiHoleConfig) error {
+	configmap := buildBaseConfigmap(rc.Cluster, string(defaults.Regexlist))
+	stringifiedData := ""
+
+	if config != nil {
+		checksum, err := utils.CalculateChecksum(config.Spec.Regexlist)
+
+		if err != nil {
+			return err
+		}
+
+		configmap.Annotations = map[string]string{
+			checksumAnnotation: checksum,
+		}
+
+		stringifiedData = v1alpha1.ArrayToString(config.Spec.Regexlist)
+	}
+
+	configmapStringData := map[string]string{
+		defaults.VolumeMountRegexlistKey: stringifiedData,
+	}
+
+	_, err := controllerutil.CreateOrUpdate(rc.Ctx, rc.K8sClient, configmap, func() error {
+		desired := builders.BuildConfigmap(configmapStringData)
+
+		configmap.Data = desired.Data
+
+		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
+	})
+
+	return err
+}
+
+func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
+	var existingConfigmaps corev1.ConfigMapList
+	operatorLabels := defaults.PiholeOperatorLabels(rc.Cluster.Name)
+
+	err := rc.K8sClient.List(
+		rc.Ctx,
+		&existingConfigmaps,
+		client.MatchingLabels(operatorLabels))
+
+	if err != nil {
+		return err
+	}
+
+	createdConfigMapNames := make([]string, 0, len(existingConfigmaps.Items))
+	for _, cm := range existingConfigmaps.Items {
+		createdConfigMapNames = append(createdConfigMapNames, cm.Name)
+	}
+
+	for component := range defaults.PiholeStaticMountConfig {
+		if component == defaults.StsVolumeName {
+			continue
+		}
+
+		configmapName := defaults.GetConfigMapName(rc.Cluster.Name, string(component))
+		if !slices.Contains(createdConfigMapNames, configmapName) {
+			err := CreateConfigmapWrapper(rc, nil, component)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func CreateConfigmapWrapper(rc *ResourceContext, config *v1alpha1.PiHoleConfig, component defaults.PiholeComponent) error {
+	if component == defaults.Custom {
+		if err := EnsureCustomConfigMap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	if component == defaults.CNAMEs {
+		if err := EnsureCNAMEConfigmap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	if component == defaults.AddHosts {
+		if err := EnsureAdditionalHostsConfigmap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	if component == defaults.Adlist {
+		if err := EnsureAdListConfigmap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	if component == defaults.Blacklist {
+		if err := EnsureBlacklistConfigmap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	if component == defaults.Whitelist {
+		if err := EnsureWhitelistConfigmap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	if component == defaults.Custom {
+		if err := EnsureRegexListConfigmap(rc, nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

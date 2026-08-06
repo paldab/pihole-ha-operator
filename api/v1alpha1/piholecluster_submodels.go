@@ -82,3 +82,21 @@ type PiHoleIngressTLS struct {
 	// +kubebuilder:validation:MinLength=1
 	SecretName string `json:"secretName"`
 }
+
+type StatisticsSyncConfig struct {
+	Mode     StatsMode            `json:"mode"`
+	External *ExternalStatsConfig `json:"external"`
+}
+
+type StatsMode string
+
+const (
+	StatsModeLocal    StatsMode = "local"
+	StatsModeExternal StatsMode = "external"
+)
+
+type ExternalStatsConfig struct {
+	// +kubebuilder:default:=60
+	ExportIntervalSeconds int `json:"exportIntervalSeconds"`
+	BatchSize             int `json:"batchSize"`
+}

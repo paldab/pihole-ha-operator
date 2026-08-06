@@ -27,7 +27,6 @@ func PiholeOperatorLabels(clusterName string) map[string]string {
 		"app.kubernetes.io/managed-by": "pihole-ha-operator",
 		"app.kubernetes.io/instance":   clusterName,
 		"app.kubernetes.io/part-of":    "pihole-ha",
-		// "app.kubernetes.io/version":    imageTag, TODO
 
 		"paldab.nl/cluster": clusterName,
 	}
@@ -40,6 +39,7 @@ func PiholePodLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
 
 	operatorEnforcedLabels := utils.MergeMap(operatorLabels, staticLabels)
 
+	// "app.kubernetes.io/version":    imageTag, TODO add only on pods, not on cluster
 	if userAddedLabels != nil {
 		return utils.MergeMap(userAddedLabels, operatorEnforcedLabels)
 	}

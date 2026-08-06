@@ -97,6 +97,14 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
+	//create configmaps but empty
+	err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext)
+
+	if err != nil {
+		log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
+		return ctrl.Result{}, err
+	}
+
 	managedSts := &appsv1.StatefulSet{}
 
 	if err := r.Get(ctx, req.NamespacedName, managedSts); err != nil {

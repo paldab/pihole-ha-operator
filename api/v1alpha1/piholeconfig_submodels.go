@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/netip"
 	"net/url"
+	"strings"
 )
 
 type ClusterRef struct {
@@ -70,6 +71,12 @@ func (records *HostRecords) ToPiholeConfigString() string {
 type AdListItem string
 type AdList []AdListItem
 
+type ListItem string
+type List []ListItem
+
+type RegexListItem string
+type RegexList []RegexListItem
+
 func (item AdListItem) String() string {
 	return string(item)
 }
@@ -81,6 +88,16 @@ func (item AdListItem) IsValid() bool {
 	}
 
 	return (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+}
+
+func ArrayToString[T ~string](array []T) string {
+	var b strings.Builder
+	for _, item := range array {
+		b.WriteString(string(item))
+		b.WriteByte('\n')
+	}
+
+	return b.String()
 }
 
 func (adlist *AdList) ArrayToString() string {
@@ -107,22 +124,4 @@ func (options *CustomOptions) ToPiholeConfigString() string {
 	}
 
 	return stringifiedData
-}
-
-type StatisticsSyncConfig struct {
-	Mode     StatsMode            `json:"mode"`
-	External *ExternalStatsConfig `json:"external"`
-}
-
-type StatsMode string
-
-const (
-	StatsModeLocal    StatsMode = "local"
-	StatsModeExternal StatsMode = "external"
-)
-
-type ExternalStatsConfig struct {
-	// +kubebuilder:default:=60
-	ExportIntervalSeconds int `json:"exportIntervalSeconds"`
-	BatchSize             int `json:"batchSize"`
 }
