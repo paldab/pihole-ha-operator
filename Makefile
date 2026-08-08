@@ -1,5 +1,6 @@
 # Image URL to use all building/pushing image targets
 IMG ?= paldab.nl/pihole-ha-operator:latest
+EXPORTER_IMG ?= paldab.nl/pihole-ha-statistics-exporter:latest
 # YEAR defines the year value used for substituting the YEAR placeholder in the boilerplate header.
 YEAR ?= $(shell date +%Y)
 
@@ -110,26 +111,37 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/main.go
+	go build -o bin/manager cmd/operator/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
+	go run ./cmd/operator/main.go
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
-.PHONY: check-image-present
-check-image-present: ## Checks if target image is present
-	$(CONTAINER_TOOL) images | grep -q ${IMG}
+.PHONY: docker-build-operator
+docker-build-operator: ## Build docker image with the manager.
+	$(CONTAINER_TOOL) build -t ${IMG} -f Dockerfile.operator .
 
-.PHONY: docker-build
-docker-build: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} .
+.PHONY: docker-build-exporter
+docker-build-exporter: ## Build docker image with the manager.
+	$(CONTAINER_TOOL) build -t ${EXPORTER_IMG} -f Dockerfile.exporter .
 
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
+.PHONY: docker-push-operator
+docker-push-operator: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
+
+.PHONY: docker-push-exporter
+docker-push-exporter: ## Push docker image with the exporter.
+	$(CONTAINER_TOOL) push ${EXPORTER_IMG}
+
+.PHONY: docker-build-all
+docker-push-all: docker-build-operator docker-build-exporter
+
+.PHONY: docker-push-all
+docker-push-all: docker-push-operator docker-push-exporter
+
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
@@ -138,8 +150,8 @@ docker-push: ## Push docker image with the manager.
 # - be able to push the image to your registry (i.e. if you do not set a valid value via IMG=<myregistry/image:<tag>> then the export will fail)
 # To adequately provide solutions that are compatible with multiple platforms, you should consider using this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
-.PHONY: docker-buildx
-docker-buildx: ## Build and push docker image for the manager for cross-platform support
+.PHONY: docker-buildx-operator
+docker-buildx-operator: ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name pihole-ha-operator-builder

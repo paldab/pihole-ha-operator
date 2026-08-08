@@ -1,0 +1,15 @@
+# The compose file is to test the external pihole_statistics exporter with postgres
+services:
+  postgres:
+    image: "postgres:18"
+    ports:
+      - 5432:5432
+
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: pihole_statistics
+      PGDATA: /var/lib/postgresql/data/18/docker
+
+    volumes:
+      - ./db-data/:/var/lib/postgres/data/18/docker

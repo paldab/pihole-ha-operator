@@ -30,7 +30,7 @@ The intended default topology is three Pi-hole replicas with exactly one active 
 **Build and push your image to the location specified by `IMG`:**
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/pihole-ha-operator:tag
+make docker-build-operator docker-push IMG=<some-registry>/pihole-ha-operator:tag
 ```
 
 **NOTE:** Running make test-e2e does not work with podman because a known limitation 
