@@ -32,7 +32,7 @@ import (
 
 var (
 	// managerImage is the manager image to be built and loaded for testing.
-	managerImage = "paldab.nl/pihole-ha-operator:v0.0.1"
+	managerImage = "paldab.nl/pihole-ha-operator:v0.0.2"
 
 	// shouldCleanupCertManager tracks whether CertManager was installed by this suite.
 	shouldCleanupCertManager = false

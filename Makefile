@@ -1,6 +1,8 @@
 # Image URL to use all building/pushing image targets
-IMG ?= paldab.nl/pihole-ha-operator:latest
-EXPORTER_IMG ?= paldab.nl/pihole-ha-statistics-exporter:latest
+VERSION  ?= v0.0.2
+IMG ?= paldab.nl/pihole-ha-operator:${VERSION}
+EXPORTER_IMG ?= paldab.nl/pihole-ha-statistics-exporter:${VERSION}
+
 # YEAR defines the year value used for substituting the YEAR placeholder in the boilerplate header.
 YEAR ?= $(shell date +%Y)
 
@@ -137,7 +139,7 @@ docker-push-exporter: ## Push docker image with the exporter.
 	$(CONTAINER_TOOL) push ${EXPORTER_IMG}
 
 .PHONY: docker-build-all
-docker-push-all: docker-build-operator docker-build-exporter
+docker-build-all: docker-build-operator docker-build-exporter
 
 .PHONY: docker-push-all
 docker-push-all: docker-push-operator docker-push-exporter
