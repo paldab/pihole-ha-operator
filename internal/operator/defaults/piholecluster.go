@@ -230,11 +230,33 @@ func DefaultProbesObj() map[string]*corev1.Probe {
 }
 
 func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
-	if obj.Spec.Statistics == nil {
-		obj.Spec.Statistics = &piholev1alpha1.StatisticsSyncConfig{
-			Mode: piholev1alpha1.StatsModeLocal,
+	var statisticsDefault = &piholev1alpha1.StatisticsSpec{
+		Mode: StatisticsMode,
+	}
+
+	clusterStats := obj.Spec.Statistics
+
+	if clusterStats == nil {
+		obj.Spec.Statistics = statisticsDefault
+		return
+	}
+
+	if clusterStats.Mode == piholev1alpha1.StatsModeExternal {
+		statisticsDefault.External = &piholev1alpha1.ExternalStatsConfig{
+			IntervalSeconds: StatisticsExportInterval,
+			BatchSize:       StatisticsExportBatchSize,
+		}
+	}
+
+	if clusterStats.External != nil {
+		if clusterStats.External.BatchSize > 0 {
+			statisticsDefault.External.BatchSize = clusterStats.External.BatchSize
 		}
 
-		obj.Spec.Statistics.External = &piholev1alpha1.ExternalStatsConfig{}
+		if clusterStats.External.IntervalSeconds < 60 {
+			clusterStats.External.IntervalSeconds = StatisticsExportInterval
+		}
 	}
+
+	obj.Spec.Statistics = statisticsDefault
 }

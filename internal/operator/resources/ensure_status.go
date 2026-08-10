@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
+	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
 	"github.com/paldab/pihole-ha-operator/internal/operator/defaults/conditions"
 	"github.com/paldab/pihole-ha-operator/internal/operator/failover"
 	appsv1 "k8s.io/api/apps/v1"
@@ -25,11 +26,6 @@ func UpdateStatusIfChanged(rc *ResourceContext, sts *appsv1.StatefulSet, failove
 	desiredStatus := calculateStatus(rc.Cluster, sts, failoverResult)
 
 	if !equality.Semantic.DeepEqual(rc.Cluster.Status, desiredStatus) {
-		// log := logf.FromContext(rc.Ctx)
-		// log.Info("patching status",
-		// 	"old", rc.Cluster.Status,
-		// 	"new", desiredStatus,
-		// )
 		originalCluster := rc.Cluster.DeepCopy()
 		rc.Cluster.Status = desiredStatus
 
@@ -53,7 +49,8 @@ func calculateStatus(cluster *v1alpha1.PiHoleCluster, sts *appsv1.StatefulSet, f
 		Conditions:         slices.Clone(cluster.Status.Conditions),
 	}
 
-	// TODO: handle failover status
+	newStatus.Statistics = updateStatistics(cluster)
+
 	if failoverResult != nil {
 		newStatus.FailoverInProgress = &failoverResult.InProgress
 		if failoverResult.Leader != nil {
@@ -112,4 +109,39 @@ func calculateStatus(cluster *v1alpha1.PiHoleCluster, sts *appsv1.StatefulSet, f
 	})
 
 	return newStatus
+}
+
+func updateStatistics(cluster *v1alpha1.PiHoleCluster) v1alpha1.StatisticsStatus {
+	var statisticsStatus = v1alpha1.StatisticsStatus{
+		Mode: defaults.StatisticsMode,
+	}
+
+	clusterStats := cluster.Spec.Statistics
+	if clusterStats == nil {
+		return statisticsStatus
+	}
+
+	statisticsStatus.Mode = clusterStats.Mode
+	if clusterStats.Mode != v1alpha1.StatsModeExternal {
+		return statisticsStatus
+	}
+
+	statisticsStatus.External = &v1alpha1.ExternalStatsStatus{
+		BatchSize:       defaults.StatisticsExportBatchSize,
+		IntervalSeconds: defaults.StatisticsExportInterval,
+	}
+
+	if clusterStats.External == nil {
+		return statisticsStatus
+	}
+
+	if clusterStats.External.BatchSize > 0 {
+		statisticsStatus.External.BatchSize = clusterStats.External.BatchSize
+	}
+
+	if clusterStats.External.IntervalSeconds >= 60 {
+		statisticsStatus.External.IntervalSeconds = clusterStats.External.IntervalSeconds
+	}
+
+	return statisticsStatus
 }

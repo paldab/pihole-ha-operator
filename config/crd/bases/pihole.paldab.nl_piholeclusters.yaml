@@ -2148,6 +2148,7 @@ spec:
                 minLength: 1
                 type: string
               image:
+                minLength: 1
                 type: string
               ingress:
                 properties:
@@ -2294,20 +2295,58 @@ spec:
                   external:
                     properties:
                       batchSize:
+                        default: 100000
                         type: integer
-                      exportIntervalSeconds:
+                      database:
+                        properties:
+                          dbName:
+                            default: pihole_statistics
+                            type: string
+                          host:
+                            type: string
+                          port:
+                            default: 5432
+                            format: int32
+                            maximum: 65535
+                            minimum: 1
+                            type: integer
+                          secretRef:
+                            properties:
+                              name:
+                                minLength: 1
+                                type: string
+                              passwordKey:
+                                default: password
+                                type: string
+                              usernameKey:
+                                default: username
+                                type: string
+                            required:
+                            - name
+                            type: object
+                        required:
+                        - host
+                        - secretRef
+                        type: object
+                      intervalSeconds:
                         default: 60
+                        minimum: 60
                         type: integer
                     required:
-                    - batchSize
-                    - exportIntervalSeconds
+                    - database
                     type: object
                   mode:
+                    enum:
+                    - Local
+                    - External
                     type: string
                 required:
-                - external
                 - mode
                 type: object
+                x-kubernetes-validations:
+                - message: the external property is required when statistics.mode
+                    is External
+                  rule: self.mode != 'External' || has(self.external)
               storage:
                 properties:
                   size:
@@ -2417,6 +2456,23 @@ spec:
               readyReplicas:
                 format: int32
                 type: integer
+              statistics:
+                properties:
+                  external:
+                    properties:
+                      batchSize:
+                        type: integer
+                      intervalSeconds:
+                        type: integer
+                    required:
+                    - batchSize
+                    - intervalSeconds
+                    type: object
+                  mode:
+                    type: string
+                required:
+                - mode
+                type: object
               updatedReplicas:
                 format: int32
                 type: integer
@@ -2424,6 +2480,7 @@ spec:
             - currentReplicas
             - failoverInProgress
             - phase
+            - statistics
             type: object
         required:
         - spec

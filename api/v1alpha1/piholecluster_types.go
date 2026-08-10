@@ -28,37 +28,30 @@ type PiHoleClusterSpec struct {
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// +required
+	// +kubebuilder:validation:MinLength=1
 	Image string `json:"image"`
 
-	// +required
 	// +kubebuilder:validation:MinLength=1
 	ExistingAdminPasswordSecret string `json:"existingAdminPasswordSecret"`
 
 	// +kubebuilder:default:=3
 	Replicas *int32 `json:"replicas,omitempty"`
 
-	// +optional
-	Storage *PiholePodStorage `json:"storage"`
+	Storage *PiholePodStorage `json:"storage,omitempty"`
 
-	// +optional
 	// +kubebuilder:default:="UTC"
 	TimeZone *string `json:"timezone,omitempty"`
 
 	// +kubebuilder:default:={}
 	DNSUpstreams []string `json:"dnsUpstreams,omitempty"`
 
-	// +optional
 	Config *PiHolePodConfig `json:"config,omitempty"`
 
-	// +optional
 	Services *PiHoleServiceSpec `json:"services,omitempty"`
 
-	// +optional
 	Ingress *PiHoleIngressSpec `json:"ingress,omitempty"`
 
-	// +optional
-	Statistics *StatisticsSyncConfig `json:"statistics"`
+	Statistics *StatisticsSpec `json:"statistics,omitempty"`
 }
 
 // PiHoleClusterStatus defines the observed state of PiHoleCluster.
@@ -97,6 +90,8 @@ type PiHoleClusterStatus struct {
 	ReadyReplicas   int32 `json:"readyReplicas,omitempty"`
 	UpdatedReplicas int32 `json:"updatedReplicas,omitempty"`
 	CurrentReplicas int32 `json:"currentReplicas"`
+
+	Statistics StatisticsStatus `json:"statistics"`
 }
 
 // +kubebuilder:object:root=true
