@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -230,33 +231,46 @@ func DefaultProbesObj() map[string]*corev1.Probe {
 }
 
 func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
-	var statisticsDefault = &piholev1alpha1.StatisticsSpec{
-		Mode: StatisticsMode,
-	}
+	var statisticsObj = &piholev1alpha1.StatisticsSpec{}
 
 	clusterStats := obj.Spec.Statistics
 
 	if clusterStats == nil {
-		obj.Spec.Statistics = statisticsDefault
+		statisticsObj.Mode = v1alpha1.StatsModeLocal
+		obj.Spec.Statistics = statisticsObj
 		return
 	}
 
-	if clusterStats.Mode == piholev1alpha1.StatsModeExternal {
-		statisticsDefault.External = &piholev1alpha1.ExternalStatsConfig{
-			IntervalSeconds: StatisticsExportInterval,
+	if clusterStats.Mode == v1alpha1.StatsModeLocal {
+		return
+	}
+
+	statisticsObj.Mode = v1alpha1.StatsModeExternal
+	if clusterStats.External == nil {
+		statisticsObj.External = &piholev1alpha1.ExternalStatsConfig{
 			BatchSize:       StatisticsExportBatchSize,
+			IntervalSeconds: StatisticsExportInterval,
 		}
+
+		obj.Spec.Statistics = statisticsObj
+		return
 	}
 
 	if clusterStats.External != nil {
+		statisticsObj.External = clusterStats.External
+
 		if clusterStats.External.BatchSize > 0 {
-			statisticsDefault.External.BatchSize = clusterStats.External.BatchSize
+			statisticsObj.External.BatchSize = clusterStats.External.BatchSize
+		} else {
+			statisticsObj.External.BatchSize = StatisticsExportBatchSize
 		}
 
 		if clusterStats.External.IntervalSeconds < 60 {
 			clusterStats.External.IntervalSeconds = StatisticsExportInterval
+		} else {
+			statisticsObj.External.IntervalSeconds = StatisticsExportInterval
 		}
-	}
 
-	obj.Spec.Statistics = statisticsDefault
+		obj.Spec.Statistics = statisticsObj
+	}
 }

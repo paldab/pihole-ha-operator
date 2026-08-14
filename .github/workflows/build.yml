@@ -21,7 +21,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build docker image
-        run: make docker-build-all VERSION=${{ github.ref_name }}
+        run: make docker-build-all \
+          VERSION=${{ github.ref_name }} \
+          GIT_COMMIT=${{ github.sha }}
 
       - name: Build docker image
-        run: make docker-push-all VERSION=${{ github.ref_name }}
+        run: make docker-push-all \
+          VERSION=${{ github.ref_name }} \
+          GIT_COMMIT=${{ github.sha }}

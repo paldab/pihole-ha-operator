@@ -5,4 +5,4 @@ kind: Kustomization
 images:
   - name: controller
     newName: paldab.nl/pihole-ha-operator
-    newTag: v0.0.2
+    newTag: v0.0.5

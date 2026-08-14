@@ -28,11 +28,12 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/paldab/pihole-ha-operator/test/utils"
+	"github.com/paldab/pihole-ha-operator/version"
 )
 
 var (
 	// managerImage is the manager image to be built and loaded for testing.
-	managerImage = "paldab.nl/pihole-ha-operator:v0.0.2"
+	managerImage = fmt.Sprintf("%s:%s", "paldab.nl/pihole-ha-operator", version.Version)
 
 	// shouldCleanupCertManager tracks whether CertManager was installed by this suite.
 	shouldCleanupCertManager = false

@@ -117,6 +117,7 @@ func updateStatistics(cluster *v1alpha1.PiHoleCluster) v1alpha1.StatisticsStatus
 	}
 
 	clusterStats := cluster.Spec.Statistics
+
 	if clusterStats == nil {
 		return statisticsStatus
 	}

@@ -70,7 +70,6 @@ var _ = Describe("PiHoleConfig Controller", func() {
 		})
 
 		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &piholev1alpha1.PiHoleConfig{}
 			err := k8sClient.Get(ctx, typeNamespacedNameConfig, resource)
 			Expect(err).NotTo(HaveOccurred())

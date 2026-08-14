@@ -75,6 +75,7 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	clusterCopy := piholeCluster.DeepCopy()
 
 	defaults.ApplyDefaultClusterValues(clusterCopy)
+
 	resourceContext := resources.ResourceContext{
 		Ctx:       ctx,
 		K8sClient: r.Client,

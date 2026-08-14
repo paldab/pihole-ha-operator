@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/operator/builders"
 	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,9 +29,20 @@ func applyMutableStatefulSetFields(currentSts, desiredSts *appsv1.StatefulSet) {
 func EnsureStatefulSet(rc *ResourceContext) error {
 	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster.Name)
 	podLabels := defaults.PiholePodLabels(rc.Cluster)
-
 	configVolumes, configVolumeMounts := getPiholeConfigVolumes(rc.Cluster.Name)
-	containers := builders.BuildPiholeContainers(*rc.Cluster, configVolumeMounts)
+
+	piholeContainer := builders.BuildPiholeContainer(rc.Cluster, configVolumeMounts)
+	var containers = []corev1.Container{
+		piholeContainer,
+	}
+
+	if rc.Cluster.Spec.Statistics.Mode == v1alpha1.StatsModeExternal {
+		statsExporterContainer, err := builders.BuildStatsExporterContainer(string(rc.Cluster.UID), rc.Cluster.Spec.Statistics)
+		if err == nil {
+			containers = append(containers, statsExporterContainer)
+		}
+	}
+
 	desiredSts := builders.BuildPiholeStatefulSet(rc.Cluster, stsLabels, podLabels, containers, configVolumes)
 
 	currentSts := &appsv1.StatefulSet{

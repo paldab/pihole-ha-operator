@@ -1,7 +1,12 @@
 # Image URL to use all building/pushing image targets
-VERSION  ?= v0.0.5
-IMG ?= paldab/pihole-ha-operator:${VERSION}
-EXPORTER_IMG ?= paldab/pihole-ha-statistics-exporter:${VERSION}
+VERSION  ?= dev
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+
+IMG := paldab/pihole-ha-operator:${VERSION}
+EXPORTER_IMG := paldab/pihole-ha-statistics-exporter:${VERSION}
+LDFLAGS := \
+	-X github.com/paldab/pihole-ha-operator/version.Version=$(VERSION) \
+	-X github.com/paldab/pihole-ha-operator/version.GitCommit=$(GIT_COMMIT)
 
 # YEAR defines the year value used for substituting the YEAR placeholder in the boilerplate header.
 YEAR ?= $(shell date +%Y)
@@ -122,7 +127,7 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/operator/main.go
+	go build -ldflags="$(LDFLAGS)" -o bin/manager cmd/operator/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

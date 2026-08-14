@@ -37,6 +37,7 @@ import (
 
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/operator/controller"
+	"github.com/paldab/pihole-ha-operator/version"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -203,7 +204,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("Starting manager")
+	setupLog.Info("Starting manager", "version", version.Version, "commit", version.GitCommit)
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)

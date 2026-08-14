@@ -13,6 +13,7 @@ import (
 	"github.com/paldab/pihole-ha-operator/internal/statistics_exporter/database"
 	dbqueries "github.com/paldab/pihole-ha-operator/internal/statistics_exporter/db_queries"
 	"github.com/paldab/pihole-ha-operator/internal/statistics_exporter/envs"
+	"github.com/paldab/pihole-ha-operator/version"
 	_ "modernc.org/sqlite"
 )
 
@@ -30,6 +31,12 @@ var (
 )
 
 func main() {
+	log.Printf("starting Pi-hole statistics exporter (version=%s, commit=%s)", version.Version, version.GitCommit)
+	log.Printf("running with exporter settings (interval=%d, batch_size=%d)",
+		exporterConfig.Interval,
+		exporterConfig.Batchsize,
+	)
+
 	exporterIdentifier = envs.GetIdentifierEnvironments()
 	exporterConfig = envs.GetExporterEnvironments(defaultBatchSize, defaultInterval)
 	externalDatabaseConfig := envs.GetDatabaseConfigFromEnvs()
@@ -63,7 +70,6 @@ func main() {
 	}
 	defer pool.Close()
 
-	log.Printf("running with exporter settings (interval=%d, batch_size=%d)", exporterConfig.Interval, exporterConfig.Batchsize)
 	startExporterLoop(ctx, localDB, pool)
 }
 
@@ -73,7 +79,7 @@ func startExporterLoop(ctx context.Context, db *sql.DB, pool *pgxpool.Pool) {
 	quit := make(chan struct{})
 
 	log.Printf(
-		"starting pihole statistics exporter (pvc_id=%s, cluster_id=%s)\n",
+		"starting pihole statistics exporter (source_id=%s, cluster_id=%s)\n",
 		exporterIdentifier.SourceUUID,
 		exporterIdentifier.ClusterUUID,
 	)

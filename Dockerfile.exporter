@@ -1,7 +1,9 @@
 # Build the manager binary
-FROM golang:1.26 AS builder
+FROM docker.io/golang:1.26 AS builder
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION
+ARG GIT_COMMIT
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -15,13 +17,20 @@ RUN go mod download
 COPY api/exporter_api ./api/exporter_api
 COPY internal/statistics_exporter ./internal/statistics_exporter
 COPY cmd/statistics_exporter ./cmd/statistics_exporter
+COPY version  ./version
 
 # Build
 # the GOARCH has no default value to allow the binary to be built according to the host where the command
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o exporter cmd/statistics_exporter/main.go
+RUN CGO_ENABLED=0 \
+    GOOS=${TARGETOS:-linux} \
+    GOARCH=${TARGETARCH} \
+    go build -a \
+	-ldflags="-X github.com/paldab/pihole-ha-operator/version.Version=${VERSION} \
+	-X github.com/paldab/pihole-ha-operator/version.GitCommit=${GIT_COMMIT}" \
+    -o exporter cmd/statistics_exporter/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
