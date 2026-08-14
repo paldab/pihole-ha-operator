@@ -1,7 +1,7 @@
 # Image URL to use all building/pushing image targets
-VERSION  ?= v0.0.2
-IMG ?= paldab.nl/pihole-ha-operator:${VERSION}
-EXPORTER_IMG ?= paldab.nl/pihole-ha-statistics-exporter:${VERSION}
+VERSION  ?= v0.0.5
+IMG ?= paldab/pihole-ha-operator:${VERSION}
+EXPORTER_IMG ?= paldab/pihole-ha-statistics-exporter:${VERSION}
 
 # YEAR defines the year value used for substituting the YEAR placeholder in the boilerplate header.
 YEAR ?= $(shell date +%Y)
@@ -50,9 +50,18 @@ help: ## Display this help.
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd paths="./..." output:crd:artifacts:config=config/crd/bases
 
+.PHONY: dry-run
+dry-run:
+	@test -n "$(INPUT)" || (echo "Usage: make dry-run INPUT=path/to/file.yaml" && exit 1)
+	kubectl apply -f "$(INPUT)" --dry-run=server
+
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	"$(CONTROLLER_GEN)" object:headerFile="hack/boilerplate.go.txt",year=$(YEAR) paths="./..."
+
+.PHONY: reload-dev
+reload-dev: generate manifests
+	kubectl apply -f "./config/crd/bases/pihole.paldab.nl_piholec*"
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -132,11 +141,11 @@ docker-build-exporter: ## Build docker image with the manager.
 
 .PHONY: docker-push-operator
 docker-push-operator: ## Push docker image with the manager.
-	$(CONTAINER_TOOL) push ${IMG}
+	$(CONTAINER_TOOL) image push ${IMG}
 
 .PHONY: docker-push-exporter
 docker-push-exporter: ## Push docker image with the exporter.
-	$(CONTAINER_TOOL) push ${EXPORTER_IMG}
+	$(CONTAINER_TOOL) image push ${EXPORTER_IMG}
 
 .PHONY: docker-build-all
 docker-build-all: docker-build-operator docker-build-exporter
