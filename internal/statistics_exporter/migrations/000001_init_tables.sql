@@ -1,22 +1,20 @@
 -- +goose Up
 CREATE TABLE pihole_database_checkpoint (
     cluster_uuid TEXT NOT NULL,
-    source_pvc_uuid TEXT NOT NULL,
-    source_pvc_name TEXT NOT NULL,
+    source_uuid TEXT NOT NULL,
 
     last_exported_id BIGINT NOT NULL,
 
     PRIMARY KEY (
         cluster_uuid,
-        source_pvc_uuid
+        source_uuid
     )
 );
 
 
 CREATE TABLE pihole_queries (
     cluster_uuid TEXT NOT NULL,
-    source_pvc_uuid TEXT NOT NULL,
-    source_pvc_name TEXT NOT NULL,
+    source_uuid TEXT NOT NULL,
 
     local_query_id BIGINT NOT NULL,
 
@@ -33,7 +31,7 @@ CREATE TABLE pihole_queries (
 
     PRIMARY KEY (
         cluster_uuid,
-        source_pvc_uuid,
+        source_uuid,
         local_query_id
     )
 );

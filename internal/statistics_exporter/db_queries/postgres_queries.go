@@ -17,10 +17,10 @@ func GetLatestCheckpoint(
 	query := `
 		SELECT last_exported_id FROM pihole_database_checkpoint
 		WHERE cluster_uuid = $1
-		AND source_pvc_uuid = $2
+		AND source_uuid = $2
 	`
 
-	row := pool.QueryRow(ctx, query, dbIdentifier.ClusterUUID, dbIdentifier.SourcePVCUUID)
+	row := pool.QueryRow(ctx, query, dbIdentifier.ClusterUUID, dbIdentifier.SourceUUID)
 
 	var checkpoint exporterapi.PiholeDatabaseCheckpoint
 	if err := row.Scan(&checkpoint.LastExportedID); err != nil {
@@ -34,28 +34,25 @@ func GetLatestCheckpoint(
 func UpdateCheckpoint(
 	ctx context.Context,
 	tx pgx.Tx,
-	clusterUUID string,
-	pvcUUID string,
-	pvcName string,
+	dbIdentifier exporterapi.DatabaseIdentifier,
 	lastQueryID int,
 ) error {
 	query := `
 	INSERT INTO pihole_database_checkpoint (
 		cluster_uuid,
-		source_pvc_uuid,
-		source_pvc_name,
+		source_uuid,
 		last_exported_id
 	)
-	VALUES ($1,$2,$3,$4)
+	VALUES ($1,$2,$3)
 	ON CONFLICT (
 		cluster_uuid,
-		source_pvc_uuid
+		source_uuid
 	)
 	DO UPDATE SET
 		last_exported_id = EXCLUDED.last_exported_id;
 	`
 
-	_, err := tx.Exec(ctx, query, clusterUUID, pvcUUID, pvcName, lastQueryID)
+	_, err := tx.Exec(ctx, query, dbIdentifier.ClusterUUID, dbIdentifier.SourceUUID, lastQueryID)
 
 	return err
 }
@@ -71,8 +68,7 @@ func InsertQueries(
 	rows := make([][]any, 0, len(queries))
 	piholeQueryCols := []string{
 		"cluster_uuid",
-		"source_pvc_uuid",
-		"source_pvc_name",
+		"source_uuid",
 		"local_query_id",
 		"query_time",
 		"type",
@@ -85,8 +81,7 @@ func InsertQueries(
 	for _, ftlQuery := range queries {
 		rows = append(rows, []any{
 			dbIdentifier.ClusterUUID,
-			dbIdentifier.SourcePVCUUID,
-			dbIdentifier.SourcePVCName,
+			dbIdentifier.SourceUUID,
 			ftlQuery.ID,
 			ftlQuery.Timestamp,
 			exporterapi.PiholeQueryType(ftlQuery.Type).String(),
@@ -113,9 +108,7 @@ func InsertQueries(
 	err = UpdateCheckpoint(
 		ctx,
 		tx,
-		dbIdentifier.ClusterUUID,
-		dbIdentifier.SourcePVCUUID,
-		dbIdentifier.SourcePVCName,
+		dbIdentifier,
 		int(lastCheckpointID),
 	)
 

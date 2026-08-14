@@ -11,7 +11,7 @@ import (
 // returns 0 if no record present
 func GetLastFTLQuery(db *sql.DB) (int, error) {
 	query := `
-	SELECT MAX(id) from queries;
+	SELECT COALESCE(MAX(id), 0) from queries;
 	`
 
 	row := db.QueryRow(query)

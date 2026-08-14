@@ -30,7 +30,7 @@ var (
 )
 
 func main() {
-	exporterIdentifier = envs.GetK8sEnvironments()
+	exporterIdentifier = envs.GetIdentifierEnvironments()
 	exporterConfig = envs.GetExporterEnvironments(defaultBatchSize, defaultInterval)
 	externalDatabaseConfig := envs.GetDatabaseConfigFromEnvs()
 
@@ -63,6 +63,7 @@ func main() {
 	}
 	defer pool.Close()
 
+	log.Printf("running with exporter settings (interval=%d, batch_size=%d)", exporterConfig.Interval, exporterConfig.Batchsize)
 	startExporterLoop(ctx, localDB, pool)
 }
 
@@ -72,11 +73,15 @@ func startExporterLoop(ctx context.Context, db *sql.DB, pool *pgxpool.Pool) {
 	quit := make(chan struct{})
 
 	log.Printf(
-		"starting pihole statistics exporter (source_pvc=%s, pvc_id=%s, cluster_id=%s)\n",
-		exporterIdentifier.SourcePVCName,
-		exporterIdentifier.SourcePVCUUID,
+		"starting pihole statistics exporter (pvc_id=%s, cluster_id=%s)\n",
+		exporterIdentifier.SourceUUID,
 		exporterIdentifier.ClusterUUID,
 	)
+
+	// Run exporter once at start before entering the loop
+	if err := exportQueries(ctx, db, pool); err != nil {
+		log.Printf("export failed: %v", err)
+	}
 
 	for {
 		select {

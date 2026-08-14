@@ -4,9 +4,8 @@ package exporterapi
 import "database/sql"
 
 type DatabaseIdentifier struct {
-	ClusterUUID   string `db:"cluster_uuid"`    // Pihole cluster ID
-	SourcePVCUUID string `db:"source_pvc_uuid"` // ID of the PV
-	SourcePVCName string `db:"source_pvc_name"` // PV like pihole-storage-0
+	ClusterUUID string `db:"cluster_uuid"` // Pihole cluster ID
+	SourceUUID  string `db:"source_uuid"`  // ID of the PV
 }
 
 type PiholeDatabaseCheckpoint struct {

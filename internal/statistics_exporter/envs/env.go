@@ -2,10 +2,13 @@
 package envs
 
 import (
+	"errors"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
+	"github.com/google/uuid"
 	exporterapi "github.com/paldab/pihole-ha-operator/api/exporter_api"
 	"github.com/paldab/pihole-ha-operator/internal/statistics_exporter/database"
 )
@@ -80,21 +83,52 @@ func GetExporterEnvironments(defaultBatchSize, defaultInterval int) exporterapi.
 	}
 }
 
-func GetK8sEnvironments() exporterapi.DatabaseIdentifier {
+func GetIdentifierEnvironments() exporterapi.DatabaseIdentifier {
 	clusterUUID := os.Getenv("CLUSTER_UUID")
 	if clusterUUID == "" {
 		log.Fatal("cannot find environment variable 'CLUSTER_UUID'")
 	}
 
-	pvcUUID := os.Getenv("PVC_UUID")
-	if pvcUUID == "" {
-		log.Fatal("cannot find environment variable 'PVC_UUID'")
+	// redo by getting file on path or generate
+	sourceIDPath := os.Getenv("SOURCE_ID_DIR")
+	if sourceIDPath == "" {
+		log.Fatal("cannot find environment variable 'SOURCE_ID_DIR'")
 	}
 
-	pvcName := os.Getenv("PVC_NAME")
-	if pvcName == "" {
-		log.Fatal("cannot find environment variable 'PVC_NAME'")
+	id, err := getOrCreateSourceID(sourceIDPath)
+	if err != nil {
+		log.Fatalf(
+			"could not fetch or create source ID from %s. err: %v",
+			sourceIDPath,
+			err,
+		)
 	}
 
-	return exporterapi.DatabaseIdentifier{ClusterUUID: clusterUUID, SourcePVCUUID: pvcUUID, SourcePVCName: pvcName}
+	return exporterapi.DatabaseIdentifier{ClusterUUID: clusterUUID, SourceUUID: id}
+}
+
+func getOrCreateSourceID(dirPath string) (string, error) {
+	statisticsExportSourceIDFile := "source-id"
+	filePath := dirPath + string(os.PathSeparator) + statisticsExportSourceIDFile
+	data, err := os.ReadFile(filePath)
+
+	if err == nil {
+		return strings.TrimSpace(string(data)), nil
+	}
+
+	if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+
+	id := uuid.NewString()
+
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return "", err
+	}
+
+	if err := os.WriteFile(filePath, []byte(id), 0600); err != nil {
+		return "", err
+	}
+
+	return id, nil
 }
