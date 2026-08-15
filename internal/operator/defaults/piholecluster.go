@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -236,16 +235,16 @@ func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
 	clusterStats := obj.Spec.Statistics
 
 	if clusterStats == nil {
-		statisticsObj.Mode = v1alpha1.StatsModeLocal
+		statisticsObj.Mode = piholev1alpha1.StatsModeLocal
 		obj.Spec.Statistics = statisticsObj
 		return
 	}
 
-	if clusterStats.Mode == v1alpha1.StatsModeLocal {
+	if clusterStats.Mode == piholev1alpha1.StatsModeLocal {
 		return
 	}
 
-	statisticsObj.Mode = v1alpha1.StatsModeExternal
+	statisticsObj.Mode = piholev1alpha1.StatsModeExternal
 	if clusterStats.External == nil {
 		statisticsObj.External = &piholev1alpha1.ExternalStatsConfig{
 			BatchSize:       StatisticsExportBatchSize,

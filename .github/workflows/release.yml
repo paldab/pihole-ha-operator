@@ -6,19 +6,28 @@ on:
       - "v*.*.*" # semver
 
 jobs:
+  e2e:
+    uses: ./.github.workflows/test-e2e.yml
+    with:
+      version: ${{ github.ref_name }}
+
   push_to_registry:
+    needs: e2e
     name: Run on Ubuntu
     runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
 
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build docker image
         run: make docker-build-all \

@@ -1,8 +1,11 @@
 name: E2E Tests
 
 on:
-  push:
-  pull_request:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 permissions: {}
 
@@ -35,4 +38,4 @@ jobs:
       - name: Running Test e2e
         run: |
           go mod tidy
-          make test-e2e
+          make test-e2e VERSION=${{ inputs.version }}

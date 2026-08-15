@@ -2,8 +2,9 @@
 VERSION  ?= dev
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 
-IMG := paldab/pihole-ha-operator:${VERSION}
-EXPORTER_IMG := paldab/pihole-ha-statistics-exporter:${VERSION}
+IMAGE_REGISTRY := ghcr.io
+IMG := ${IMAGE_REGISTRY}/paldab/pihole-ha-operator:${VERSION}
+EXPORTER_IMG := ${IMAGE_REGISTRY}/paldab/pihole-ha-statistics-exporter:${VERSION}
 LDFLAGS := \
 	-X github.com/paldab/pihole-ha-operator/version.Version=$(VERSION) \
 	-X github.com/paldab/pihole-ha-operator/version.GitCommit=$(GIT_COMMIT)

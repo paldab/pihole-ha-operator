@@ -31,15 +31,11 @@ import (
 	"github.com/paldab/pihole-ha-operator/version"
 )
 
-var (
-	// managerImage is the manager image to be built and loaded for testing.
-	managerImage = fmt.Sprintf("%s:%s", "paldab.nl/pihole-ha-operator", version.Version)
-
-	// shouldCleanupCertManager tracks whether CertManager was installed by this suite.
-	shouldCleanupCertManager = false
-)
-
 const (
+	imageRegistry     = "ghcr.io"
+	operatorImageName = "paldab.nl/pihole-ha-operator"
+	exporterImageName = "paldab/pihole-ha-statistics-exporter"
+
 	operatorDeployName = "pihole-ha-operator-controller-manager"
 
 	// namespace where the project is deployed in
@@ -55,6 +51,17 @@ const (
 	metricsRoleBindingName = "pihole-ha-operator-metrics-binding"
 )
 
+var (
+	// managerImage is the manager image to be built and loaded for testing.
+	managerImage = fmt.Sprintf("%s/%s:%s", imageRegistry, operatorImageName, version.Version)
+
+	// exporterImage is the manager image to be built and loaded for testing.
+	exporterImage = fmt.Sprintf("%s/%s:%s", imageRegistry, exporterImageName, version.Version)
+
+	// shouldCleanupCertManager tracks whether CertManager was installed by this suite.
+	shouldCleanupCertManager = false
+)
+
 // TestE2E runs the e2e test suite to validate the solution in an isolated environment.
 // The default setup requires Kind and CertManager.
 //
@@ -68,14 +75,24 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	fmt.Fprintf(GinkgoWriter, "e2e tests will use the following images, %s and %s", managerImage, exporterImage)
 	By("building the manager image")
 	cmd := exec.Command("make", "docker-build-operator", fmt.Sprintf("IMG=%s", managerImage))
 	_, err := utils.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager image")
 
+	By("building the exporter image")
+	cmd = exec.Command("make", "docker-build-exporter", fmt.Sprintf("EXPORTER_IMG=%s", exporterImage))
+	_, err = utils.Run(cmd)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the exporter image")
+
 	By("loading the manager image on Kind")
 	err = utils.LoadImageToKindClusterWithName(managerImage)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager image into Kind")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), fmt.Sprintf("Failed to load the manager image %s into Kind", managerImage))
+
+	By("loading the exporter image on Kind")
+	err = utils.LoadImageToKindClusterWithName(exporterImage)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), fmt.Sprintf("Failed to load the exporter image %s into Kind", exporterImage))
 
 	// configureKubectlKubeRC()
 	// setupCertManager()
@@ -106,7 +123,6 @@ var _ = AfterSuite(func() {
 	By("removing manager namespace")
 	cmd = exec.Command("kubectl", "delete", "ns", namespace)
 	_, _ = utils.Run(cmd)
-
 })
 
 // Disable kubectl kuberc by default for test isolation.

@@ -2,8 +2,8 @@
 FROM docker.io/golang:1.26 AS builder
 ARG TARGETOS
 ARG TARGETARCH
-ARG VERSION
-ARG GIT_COMMIT
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
