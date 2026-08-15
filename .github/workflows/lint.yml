@@ -10,7 +10,7 @@ jobs:
   lint:
     permissions:
       contents: read
-    name: Run on Ubuntu
+    name: Linting
     runs-on: ubuntu-latest
     steps:
       - name: Clone the code
@@ -25,5 +25,6 @@ jobs:
 
       - name: Check linter configuration
         run: make lint-config
+
       - name: Run linter
         run: make lint

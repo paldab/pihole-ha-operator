@@ -7,13 +7,13 @@ on:
 
 jobs:
   e2e:
-    uses: ./.github.workflows/test-e2e.yml
+    uses: ./.github/workflows/test-e2e.yml
     with:
       version: ${{ github.ref_name }}
 
   push_to_registry:
     needs: e2e
-    name: Run on Ubuntu
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
 
     permissions:
