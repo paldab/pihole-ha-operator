@@ -32,7 +32,7 @@ type PiHoleClusterSpec struct {
 	Image string `json:"image"`
 
 	// +kubebuilder:validation:MinLength=1
-	ExistingAdminPasswordSecret string `json:"existingAdminPasswordSecret"`
+	ExistingSecretRef ExistingPasswordSecretRef `json:"existingSecretRef"`
 
 	// +kubebuilder:default:=3
 	Replicas *int32 `json:"replicas,omitempty"`
@@ -98,9 +98,10 @@ type PiHoleClusterStatus struct {
 // +kubebuilder:subresource:status
 
 // PiHoleCluster is the Schema for the piholeclusters API
-// +kubebuilder:printcolumn:name="Instances",type=number,JSONPath=`.status.currentReplicas`
-// +kubebuilder:printcolumn:name="Ready",type=number,JSONPath=`.status.readyReplicas`
+// +kubebuilder:printcolumn:name="Replicas",type=number,JSONPath=`.status.readyReplicas`
 // +kubebuilder:printcolumn:name="Primary",type=string,JSONPath=`.status.currentPrimary`
+// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.image`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type PiHoleCluster struct {
 	metav1.TypeMeta `json:",inline"`
 

@@ -51,9 +51,11 @@ var _ = Describe("PiHoleCluster failover tests", func() {
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.PiHoleClusterSpec{
-				Image:                       piholeImage,
-				Replicas:                    new(int32(targetReplicas)),
-				ExistingAdminPasswordSecret: adminSecretName,
+				Image:    piholeImage,
+				Replicas: new(int32(targetReplicas)),
+				ExistingSecretRef: v1alpha1.ExistingPasswordSecretRef{
+					SecretName: adminSecretName,
+				},
 			},
 		}
 

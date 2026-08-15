@@ -15,15 +15,18 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.currentReplicas
-      name: Instances
-      type: number
     - jsonPath: .status.readyReplicas
-      name: Ready
+      name: Replicas
       type: number
     - jsonPath: .status.currentPrimary
       name: Primary
       type: string
+    - jsonPath: .spec.image
+      name: Version
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:

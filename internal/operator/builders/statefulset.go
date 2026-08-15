@@ -73,7 +73,7 @@ func BuildPiholeStatefulSet(cluster *piholev1alpha1.PiHoleCluster, labels, podLa
 }
 
 func BuildPiholeContainer(cluster *piholev1alpha1.PiHoleCluster, volumeMounts []corev1.VolumeMount) corev1.Container {
-	requiredEnvs := defaults.RequiredPiholeEnvs(cluster.Spec.ExistingAdminPasswordSecret, *cluster.Spec.TimeZone, defaults.WebserverPort, cluster.Spec.DNSUpstreams)
+	requiredEnvs := defaults.RequiredPiholeEnvs(cluster.Spec.ExistingSecretRef, *cluster.Spec.TimeZone, defaults.WebserverPort, cluster.Spec.DNSUpstreams)
 	additionalEnvs := defaults.AdditionalPiholeEnvs(cluster)
 	containerEnvs := append(requiredEnvs, additionalEnvs...)
 	piholeEnvs := append(containerEnvs, cluster.Spec.Config.Env...)

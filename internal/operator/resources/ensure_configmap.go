@@ -302,47 +302,23 @@ func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
 }
 
 func CreateConfigmapWrapper(rc *ResourceContext, config *v1alpha1.PiHoleConfig, component defaults.PiholeComponent) error {
-	if component == defaults.Custom {
-		if err := EnsureCustomConfigMap(rc, nil); err != nil {
-			return err
-		}
+	var error error
+	switch component {
+	case defaults.Custom:
+		error = EnsureCustomConfigMap(rc, nil)
+	case defaults.AddHosts:
+		error = EnsureAdditionalHostsConfigmap(rc, nil)
+	case defaults.CNAMEs:
+		error = EnsureCNAMEConfigmap(rc, nil)
+	case defaults.Adlist:
+		error = EnsureAdListConfigmap(rc, nil)
+	case defaults.Blacklist:
+		error = EnsureBlacklistConfigmap(rc, nil)
+	case defaults.Whitelist:
+		error = EnsureWhitelistConfigmap(rc, nil)
+	case defaults.Regexlist:
+		error = EnsureRegexListConfigmap(rc, nil)
 	}
 
-	if component == defaults.CNAMEs {
-		if err := EnsureCNAMEConfigmap(rc, nil); err != nil {
-			return err
-		}
-	}
-
-	if component == defaults.AddHosts {
-		if err := EnsureAdditionalHostsConfigmap(rc, nil); err != nil {
-			return err
-		}
-	}
-
-	if component == defaults.Adlist {
-		if err := EnsureAdListConfigmap(rc, nil); err != nil {
-			return err
-		}
-	}
-
-	if component == defaults.Blacklist {
-		if err := EnsureBlacklistConfigmap(rc, nil); err != nil {
-			return err
-		}
-	}
-
-	if component == defaults.Whitelist {
-		if err := EnsureWhitelistConfigmap(rc, nil); err != nil {
-			return err
-		}
-	}
-
-	if component == defaults.Custom {
-		if err := EnsureRegexListConfigmap(rc, nil); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return error
 }

@@ -34,6 +34,7 @@ var _ = Describe("PiHoleConfig Controller", func() {
 		const (
 			resourceName      = "test-resource"
 			resourceNamespace = "default"
+			piholeImage       = "pihole/pihole:2026.07.2"
 		)
 		var clusterName = fmt.Sprintf("%s-cluster", resourceName)
 
@@ -56,7 +57,7 @@ var _ = Describe("PiHoleConfig Controller", func() {
 			By("creating the custom resource for the Kind PiHoleCluster")
 			err := k8sClient.Get(ctx, typeNamespacedNameCluster, &piholecluster)
 			if err != nil && errors.IsNotFound(err) {
-				resource := createMinimalCluster(typeNamespacedNameConfig)
+				resource := createMinimalCluster(typeNamespacedNameConfig, piholeImage)
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
 

@@ -5,6 +5,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+type ExistingPasswordSecretRef struct {
+	SecretName string `json:"secretName"`
+
+	// +kubebuilder:default:="password"
+	PasswordKey *string `json:"passwordKey,omitempty"`
+}
+
 type PiholePodStorage struct {
 	Size         *resource.Quantity `json:"size,omitempty"`
 	StorageClass *string            `json:"storageClass,omitempty"`

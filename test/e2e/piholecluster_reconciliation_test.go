@@ -64,9 +64,11 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.PiHoleClusterSpec{
-				Image:                       piholeImage,
-				Replicas:                    new(int32(targetReplicas)),
-				ExistingAdminPasswordSecret: adminSecretName,
+				Image:    piholeImage,
+				Replicas: new(int32(targetReplicas)),
+				ExistingSecretRef: v1alpha1.ExistingPasswordSecretRef{
+					SecretName: adminSecretName,
+				},
 			},
 		}
 

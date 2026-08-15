@@ -89,7 +89,7 @@ func defaultDNSUpstream(obj *piholev1alpha1.PiHoleCluster) {
 	}
 }
 
-func RequiredPiholeEnvs(secretName, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
+func RequiredPiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  "TZ",
@@ -103,9 +103,9 @@ func RequiredPiholeEnvs(secretName, timezone string, webserverPort int32, DNSUps
 			Name: "FTLCONF_webserver_api_password",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					Key: "password",
+					Key: *secretRef.PasswordKey,
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
+						Name: secretRef.SecretName,
 					},
 				},
 			},

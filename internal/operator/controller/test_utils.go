@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func createMinimalCluster(typeNamespacedName types.NamespacedName) *v1alpha1.PiHoleCluster {
+func createMinimalCluster(typeNamespacedName types.NamespacedName, piholeImage string) *v1alpha1.PiHoleCluster {
 	return &v1alpha1.PiHoleCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      typeNamespacedName.Name,
@@ -14,8 +14,10 @@ func createMinimalCluster(typeNamespacedName types.NamespacedName) *v1alpha1.PiH
 		},
 
 		Spec: v1alpha1.PiHoleClusterSpec{
-			ExistingAdminPasswordSecret: "test-admin-password",
-			Image:                       "pihole/pihole:latest",
+			ExistingSecretRef: v1alpha1.ExistingPasswordSecretRef{
+				SecretName: "test-admin-password",
+			},
+			Image: piholeImage,
 		},
 	}
 }
