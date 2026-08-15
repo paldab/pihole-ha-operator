@@ -6,6 +6,7 @@ import (
 )
 
 type ExistingPasswordSecretRef struct {
+	// +kubebuilder:validation:MinLength=1
 	SecretName string `json:"secretName"`
 
 	// +kubebuilder:default:="password"
@@ -65,6 +66,8 @@ type PiHoleServiceSpec struct {
 	DHCP *ServiceConfig `json:"dhcp,omitempty"`
 }
 
+// PiHoleIngressSpec contains configuration for the ingress for the web interface
+// +kubebuilder:validation:XValidation:rule="!has(self.enabled) || !self.enabled || has(self.host)",message="host is required when ingress is enabled"
 type PiHoleIngressSpec struct {
 	// +kubebuilder:default:=false
 	Enabled *bool `json:"enabled"`
@@ -73,18 +76,18 @@ type PiHoleIngressSpec struct {
 
 	// Hostname used to access the Pi-hole web interface.
 	// +kubebuilder:validation:MinLength=1
-	Host string `json:"host"`
+	Host *string `json:"host,omitempty"`
 
-	ClassName *string `json:"className"`
+	ClassName *string `json:"className,omitempty"`
 
 	TLS *PiHoleIngressTLS `json:"tls,omitempty"`
 }
 
-type StatsMode string
+type StatisticsMode string
 
 const (
-	StatsModeLocal    StatsMode = "Local"
-	StatsModeExternal StatsMode = "External"
+	StatsModeLocal    StatisticsMode = "Local"
+	StatsModeExternal StatisticsMode = "External"
 )
 
 type PiHoleIngressTLS struct {
@@ -92,21 +95,24 @@ type PiHoleIngressTLS struct {
 	SecretName string `json:"secretName"`
 }
 
+// StatisticsSpec contains the configuration of exporting statistics to an external DB or keep data local
 // +kubebuilder:validation:XValidation:rule="self.mode != 'External' || has(self.external)",message="the external property is required when statistics.mode is External"
+// +kubebuilder:validation:XValidation:rule="self.mode == 'External' || !has(self.external)",message="the external property may only be set when statistics.mode is External"
 type StatisticsSpec struct {
 	// +kubebuilder:validation:Enum=Local;External
-	Mode StatsMode `json:"mode"`
+	Mode StatisticsMode `json:"mode"`
 
-	External *ExternalStatsConfig `json:"external,omitempty"`
+	External *ExternalStatisticsConfig `json:"external,omitempty"`
 }
 
-type ExternalStatsConfig struct {
+type ExternalStatisticsConfig struct {
 	// +kubebuilder:default:=60
 	// +kubebuilder:validation:Minimum=60
-	IntervalSeconds int `json:"intervalSeconds,omitempty"`
+	IntervalSeconds int32 `json:"intervalSeconds,omitempty"`
 
 	// +kubebuilder:default:=100000
-	BatchSize int `json:"batchSize,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	BatchSize int32 `json:"batchSize,omitempty"`
 
 	Database StatisticsDatabaseSpec `json:"database"`
 }
@@ -120,6 +126,7 @@ type StatisticsDatabaseSpec struct {
 	Port int32 `json:"port,omitempty"`
 
 	// +kubebuilder:default:="pihole_statistics"
+	// +kubebuilder:validation:MinLength=1
 	DBName string `json:"dbName,omitempty"`
 
 	SecretRef StatsDatabaseSecretSelector `json:"secretRef"`
@@ -130,20 +137,20 @@ type StatsDatabaseSecretSelector struct {
 	Name string `json:"name"`
 
 	// +kubebuilder:default:="username"
+	// +kubebuilder:validation:MinLength=1
 	UsernameKey string `json:"usernameKey,omitempty"`
 
 	// +kubebuilder:default:="password"
+	// +kubebuilder:validation:MinLength=1
 	PasswordKey string `json:"passwordKey,omitempty"`
 }
 
-type ExternalStatsStatus struct {
-	IntervalSeconds int `json:"intervalSeconds"`
-	BatchSize       int `json:"batchSize"`
+type ExternalStatisticsStatus struct {
+	IntervalSeconds int32 `json:"intervalSeconds"`
+	BatchSize       int32 `json:"batchSize"`
 }
 
 type StatisticsStatus struct {
-	Mode StatsMode `json:"mode"`
-
-	// +optional
-	External *ExternalStatsStatus `json:"external"`
+	Mode     StatisticsMode            `json:"mode"`
+	External *ExternalStatisticsStatus `json:"external,omitempty"`
 }

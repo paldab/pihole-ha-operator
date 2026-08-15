@@ -117,11 +117,11 @@ func BuildStatsExporterContainer(clusterUUID string, StatisticsSyncConfig *pihol
 		},
 		{
 			Name:  "EXPORTER_BATCH_SIZE",
-			Value: strconv.Itoa(StatisticsSyncConfig.External.BatchSize),
+			Value: strconv.Itoa(int(StatisticsSyncConfig.External.BatchSize)),
 		},
 		{
 			Name:  "EXPORTER_INTERVAL",
-			Value: strconv.Itoa(StatisticsSyncConfig.External.IntervalSeconds),
+			Value: strconv.Itoa(int(StatisticsSyncConfig.External.IntervalSeconds)),
 		},
 		{
 			Name:  "DB_HOST",

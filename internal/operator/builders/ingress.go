@@ -21,7 +21,7 @@ func BuildIngress(cluster *v1alpha1.PiHoleCluster) *networkingv1.Ingress {
 			IngressClassName: cluster.Spec.Ingress.ClassName,
 			Rules: []networkingv1.IngressRule{
 				{
-					Host:             ingressConfig.Host,
+					Host:             *ingressConfig.Host,
 					IngressRuleValue: ingressWebRule,
 				},
 			},
@@ -32,7 +32,7 @@ func BuildIngress(cluster *v1alpha1.PiHoleCluster) *networkingv1.Ingress {
 		ing.Spec.TLS = []networkingv1.IngressTLS{
 			{
 				Hosts: []string{
-					ingressConfig.Host,
+					*ingressConfig.Host,
 				},
 				SecretName: ingressConfig.TLS.SecretName,
 			},

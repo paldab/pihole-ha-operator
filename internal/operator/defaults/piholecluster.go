@@ -11,6 +11,10 @@ import (
 )
 
 func ApplyDefaultClusterValues(obj *piholev1alpha1.PiHoleCluster) {
+	if obj.Spec.ExistingSecretRef.PasswordKey == nil {
+		obj.Spec.ExistingSecretRef.PasswordKey = new("password")
+	}
+
 	defaultConfig(obj)
 	defaultStorage(obj)
 	defaultServices(obj)
@@ -132,7 +136,7 @@ func AdditionalPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar
 	if cluster.Spec.Ingress != nil {
 		envs = append(envs, corev1.EnvVar{
 			Name:  "VIRTUAL_HOST",
-			Value: cluster.Spec.Ingress.Host,
+			Value: *cluster.Spec.Ingress.Host,
 		})
 	}
 

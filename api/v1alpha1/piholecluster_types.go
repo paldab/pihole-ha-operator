@@ -23,18 +23,14 @@ import (
 
 // PiHoleClusterSpec defines the desired state of PiHoleCluster
 type PiHoleClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-
 	// +kubebuilder:validation:MinLength=1
 	Image string `json:"image"`
 
-	// +kubebuilder:validation:MinLength=1
 	ExistingSecretRef ExistingPasswordSecretRef `json:"existingSecretRef"`
 
 	// +kubebuilder:default:=3
+	// +kubebuilder:validation:Minimum=1
+	// Replicas minimum 1 because the operator is not build to handle 0 replicas
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	Storage *PiholePodStorage `json:"storage,omitempty"`

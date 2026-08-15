@@ -44,10 +44,6 @@ func GetDatabaseConfigFromEnvs() database.PostgresConnConfig {
 		"DB_PASSWORD": "",
 	}
 
-	var databaseConnection = database.PostgresConnConfig{
-		Database: "pihole_statistics",
-	}
-
 	for key := range requiredDBEnvs {
 		tmpEnv := os.Getenv(key)
 
@@ -58,6 +54,7 @@ func GetDatabaseConfigFromEnvs() database.PostgresConnConfig {
 		requiredDBEnvs[key] = tmpEnv
 	}
 
+	var databaseConnection = database.PostgresConnConfig{Database: "pihole_statistics"}
 	dbPort := GetIntEnvironment("DB_PORT", 5432)
 	dbName := os.Getenv("DB_DATABASE")
 
