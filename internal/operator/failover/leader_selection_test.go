@@ -180,10 +180,10 @@ func TestFailover_DemotesPreviousLeaderAndPromotesFirstCandidate(t *testing.T) {
 		)
 	}
 
-	if result.Reason != status.ReasonFailoverComplete {
+	if result.Reason != status.ReasonFailoverCompleted {
 		t.Fatalf(
 			"expected reason %q, got %q",
-			status.ReasonFailoverComplete,
+			status.ReasonFailoverCompleted,
 			result.Reason,
 		)
 	}
@@ -218,10 +218,10 @@ func TestFailover_NoEligibleCandidates(t *testing.T) {
 		)
 	}
 
-	if result.Reason != status.ReasonNoEligibleLeader {
+	if result.Reason != status.ReasonLeaderUnavailable {
 		t.Fatalf(
 			"expected reason %q, got %q",
-			status.ReasonNoEligibleLeader,
+			status.ReasonLeaderUnavailable,
 			result.Reason,
 		)
 	}

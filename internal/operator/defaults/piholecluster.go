@@ -134,10 +134,12 @@ func AdditionalPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar
 	}
 
 	if cluster.Spec.Ingress != nil {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "VIRTUAL_HOST",
-			Value: *cluster.Spec.Ingress.Host,
-		})
+		if cluster.Spec.Ingress.Host != nil {
+			envs = append(envs, corev1.EnvVar{
+				Name:  "VIRTUAL_HOST",
+				Value: *cluster.Spec.Ingress.Host,
+			})
+		}
 	}
 
 	if cluster.Spec.Services.DNS.LoadBalancerIP != nil {
@@ -250,7 +252,7 @@ func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
 
 	statisticsObj.Mode = piholev1alpha1.StatsModeExternal
 	if clusterStats.External == nil {
-		statisticsObj.External = &piholev1alpha1.ExternalStatsConfig{
+		statisticsObj.External = &piholev1alpha1.ExternalStatisticsConfig{
 			BatchSize:       StatisticsExportBatchSize,
 			IntervalSeconds: StatisticsExportInterval,
 		}

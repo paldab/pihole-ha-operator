@@ -14,8 +14,8 @@ const (
 	StsVolumeName PiholeComponent = PiholeStatefulSetVolumeName
 	Adlist        PiholeComponent = "adlist"
 	AddHosts      PiholeComponent = "additional-hosts"
-	Blacklist     PiholeComponent = "blacklist"
-	Whitelist     PiholeComponent = "whitelist"
+	Denylist      PiholeComponent = "denylist"
+	Allowlist     PiholeComponent = "allowlist"
 	Regexlist     PiholeComponent = "regexlist"
 	Custom        PiholeComponent = "custom-config"
 	CNAMEs        PiholeComponent = "cname"
@@ -25,8 +25,8 @@ const (
 	VolumeMountAddHostsKey  = "additional-hosts"
 	VolumeMountCustomKey    = "custom.conf"
 	VolumeMountCNAMEKey     = "custom-cnames.conf"
-	VolumeMountBlacklistKey = "blacklist.txt"
-	VolumeMountWhitelistKey = "whitelist.txt"
+	VolumeMountDenylistKey  = "denylist.txt"
+	VolumeMountAllowlistKey = "allowlist.txt"
 	VolumeMountRegexlistKey = "regex.list"
 )
 
@@ -63,14 +63,14 @@ var PiholeStaticMountConfig = PiholeVolumeConfigMap{
 		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, VolumeMountAdlistKey),
 	},
 
-	Blacklist: PiholeVolumeConfig{
-		Key:       VolumeMountBlacklistKey,
-		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, VolumeMountBlacklistKey),
+	Denylist: PiholeVolumeConfig{
+		Key:       VolumeMountDenylistKey,
+		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, VolumeMountDenylistKey),
 	},
 
-	Whitelist: PiholeVolumeConfig{
-		Key:       VolumeMountWhitelistKey,
-		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, VolumeMountWhitelistKey),
+	Allowlist: PiholeVolumeConfig{
+		Key:       VolumeMountAllowlistKey,
+		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, VolumeMountAllowlistKey),
 	},
 
 	Regexlist: PiholeVolumeConfig{

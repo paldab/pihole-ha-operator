@@ -47,9 +47,9 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 	// handle case where somehow leaderCandidates are still empty
 	if len(leaderCandidates.Items) == 0 {
 		return FailoverResult{
-			InProgress: false,
+			InProgress: true,
 			Leader:     nil,
-			Reason:     ReasonNoEligibleLeader,
+			Reason:     ReasonLeaderUnavailable,
 		}, fmt.Errorf("there is currently no leader and there are no candidates to become the pihole leader")
 	}
 
@@ -73,7 +73,7 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 		return FailoverResult{
 			InProgress: false,
 			Leader:     nil,
-			Reason:     ReasonPromotionFailed,
+			Reason:     ReasonDemotionFailed,
 		}, err
 	}
 
@@ -102,8 +102,6 @@ func GetLeaderElectionState(availabePiholePods *corev1.PodList) LeaderElectionSt
 			// if pod is already primary but no longer ready to stay primary, reset state
 			if isLeaderPod {
 				previousLeader = pod
-				// currentLeader = nil
-				// demoteFromLeader(pod)
 			}
 
 			continue

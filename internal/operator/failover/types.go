@@ -1,19 +1,10 @@
 package failover
 
 const (
-	TypeReady              = "Ready"
-	TypeFailoverInProgress = "FailoverInProgress"
+	ReasonLeaderUnavailable = "LeaderUnavailable"
+	ReasonFailoverComplete  = "FailoverComplete"
+	ReasonLeaderUnhealthy   = "LeaderUnhealthy"
+	ReasonPromotionFailed   = "LeaderPromotionFailed"
+	ReasonDemotionFailed    = "PodDemotionFailed"
+	ReasonLeaderHealthy     = "LeaderHealthy"
 )
-
-const (
-	ReasonNoEligibleLeader = "NoEligibleLeader"
-	ReasonFailoverComplete = "FailoverComplete"
-	ReasonLeaderUnhealthy  = "LeaderUnhealthy"
-	ReasonPromotionFailed  = "LeaderPromotionFailed"
-)
-
-var FailoverReasonMessages = map[string]string{
-	ReasonNoEligibleLeader: "There is not a single pod stable enough to become a leader",
-	ReasonFailoverComplete: "Failover comeplete",
-	ReasonLeaderUnhealthy:  "Leader has become unhealthy and can't receive traffic",
-}
