@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"maps"
+	"sort"
 )
 
 func ValueOrDefault[T any](baseValue, defaultValue *T) *T {
@@ -42,4 +43,16 @@ func CalculateChecksum[V any](values V) (string, error) {
 
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:]), nil
+}
+
+func GetSortedKeysFromMap[K ~string, T any](records map[K]T) []string {
+	keys := make([]string, 0, len(records))
+
+	for key := range records {
+		keys = append(keys, string(key))
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
