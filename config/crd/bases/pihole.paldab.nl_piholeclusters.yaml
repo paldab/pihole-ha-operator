@@ -24,6 +24,9 @@ spec:
     - jsonPath: .spec.image
       name: Version
       type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+      name: Reason
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -2147,13 +2150,23 @@ spec:
                 items:
                   type: string
                 type: array
-              existingAdminPasswordSecret:
-                minLength: 1
-                type: string
+              existingSecretRef:
+                properties:
+                  passwordKey:
+                    default: password
+                    type: string
+                  secretName:
+                    minLength: 1
+                    type: string
+                required:
+                - secretName
+                type: object
               image:
                 minLength: 1
                 type: string
               ingress:
+                description: PiHoleIngressSpec contains configuration for the ingress
+                  for the web interface
                 properties:
                   annotations:
                     additionalProperties:
@@ -2177,13 +2190,17 @@ spec:
                     - secretName
                     type: object
                 required:
-                - className
                 - enabled
-                - host
                 type: object
+                x-kubernetes-validations:
+                - message: host is required when ingress is enabled
+                  rule: '!has(self.enabled) || !self.enabled || has(self.host)'
               replicas:
                 default: 3
+                description: Replicas minimum 1 because the operator is not build
+                  to handle 0 replicas
                 format: int32
+                minimum: 1
                 type: integer
               services:
                 properties:
@@ -2294,18 +2311,24 @@ spec:
                         == ''LoadBalancer'')'
                 type: object
               statistics:
+                description: StatisticsSpec contains the configuration of exporting
+                  statistics to an external DB or keep data local
                 properties:
                   external:
                     properties:
                       batchSize:
                         default: 100000
+                        format: int32
+                        minimum: 1
                         type: integer
                       database:
                         properties:
                           dbName:
                             default: pihole_statistics
+                            minLength: 1
                             type: string
                           host:
+                            minLength: 1
                             type: string
                           port:
                             default: 5432
@@ -2320,9 +2343,11 @@ spec:
                                 type: string
                               passwordKey:
                                 default: password
+                                minLength: 1
                                 type: string
                               usernameKey:
                                 default: username
+                                minLength: 1
                                 type: string
                             required:
                             - name
@@ -2333,6 +2358,7 @@ spec:
                         type: object
                       intervalSeconds:
                         default: 60
+                        format: int32
                         minimum: 60
                         type: integer
                     required:
@@ -2350,6 +2376,9 @@ spec:
                 - message: the external property is required when statistics.mode
                     is External
                   rule: self.mode != 'External' || has(self.external)
+                - message: the external property may only be set when statistics.mode
+                    is External
+                  rule: self.mode == 'External' || !has(self.external)
               storage:
                 properties:
                   size:
@@ -2363,9 +2392,10 @@ spec:
                 type: object
               timezone:
                 default: UTC
+                minLength: 1
                 type: string
             required:
-            - existingAdminPasswordSecret
+            - existingSecretRef
             - image
             type: object
           status:
@@ -2450,11 +2480,13 @@ spec:
                 type: integer
               failoverInProgress:
                 default: false
+                description: 'todo: remove'
                 type: boolean
               observedGeneration:
                 format: int64
                 type: integer
               phase:
+                description: 'todo: remove'
                 type: string
               readyReplicas:
                 format: int32
@@ -2464,8 +2496,10 @@ spec:
                   external:
                     properties:
                       batchSize:
+                        format: int32
                         type: integer
                       intervalSeconds:
+                        format: int32
                         type: integer
                     required:
                     - batchSize
@@ -2480,7 +2514,6 @@ spec:
                 format: int32
                 type: integer
             required:
-            - currentReplicas
             - failoverInProgress
             - phase
             - statistics

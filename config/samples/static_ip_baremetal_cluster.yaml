@@ -1,0 +1,38 @@
+# Example cluster assigning static IP to DNS using metalLB
+apiVersion: pihole.paldab.nl/v1alpha1
+kind: PiHoleCluster
+metadata:
+  name: test-pihole
+spec:
+  image: pihole/pihole:latest
+  ExistingSecretRef:
+    secretName: pihole-admin-password
+
+  timezone: Europe/Amsterdam
+  storage:
+    size: 3Gi
+
+  dnsUpstreams:
+    - 8.8.8.8
+    - 8.8.4.4
+
+  config:
+    env:
+      - name: ServerIP
+        value: 192.168.1.240
+
+  services:
+    DNS:
+      enabled: true
+      type: LoadBalancer
+      annotations:
+        metallb.io/loadBalancerIPs: 192.168.1.240
+      loadBalancerIP: 192.168.1.240 # Technically deprecated but also sets environment variables and configurations
+---
+apiVersion: v1
+stringData:
+  password: "admin"
+kind: Secret
+metadata:
+  name: pihole-admin-password-test
+type: Opaque

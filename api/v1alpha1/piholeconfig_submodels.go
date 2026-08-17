@@ -5,6 +5,8 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
+
+	"github.com/paldab/pihole-ha-operator/internal/operator/utils"
 )
 
 type ClusterRef struct {
@@ -24,13 +26,16 @@ type CanonicalName string
 //   - home.paldab.nl
 type CNAMERecords map[string][]CanonicalName
 
-// ToPiholeConfigString maps record to 'cname=example.com,ingress.example.com'
-func (records CNAMERecords) ToPiholeConfigString() string {
+// ToConfigmapString maps record to 'cname=example.com,ingress.example.com'
+func (records CNAMERecords) ToConfigmapString() string {
+	keys := utils.GetSortedKeysFromMap(records)
 	stringifiedData := ""
 
-	for destKey, cannonicalNameArray := range records {
+	for _, key := range keys {
+		cannonicalNameArray := records[key]
+
 		for _, cannonicalName := range cannonicalNameArray {
-			entry := fmt.Sprintf("cname=%s,%s", cannonicalName, destKey)
+			entry := fmt.Sprintf("cname=%s,%s", cannonicalName, key)
 			stringifiedData = stringifiedData + entry + "\n"
 		}
 	}
@@ -57,12 +62,13 @@ func (ip IPAddress) IsValid() bool {
 
 type HostRecords map[Domain]IPAddress
 
-func (records *HostRecords) ToPiholeConfigString() string {
+func (records HostRecords) ToConfigmapString() string {
+	domains := utils.GetSortedKeysFromMap(records)
 	stringifiedData := ""
 
-	for domain, host := range *records {
-		// entry := fmt.Sprintf("%s%s", host, domain)
-		stringifiedData = stringifiedData + host.String() + "\t" + domain.String() + "\n"
+	for _, domain := range domains {
+		host := records[Domain(domain)]
+		stringifiedData = stringifiedData + host.String() + "\t" + domain + "\n"
 	}
 
 	return stringifiedData
@@ -71,11 +77,27 @@ func (records *HostRecords) ToPiholeConfigString() string {
 type AdListItem string
 type AdList []AdListItem
 
+func (adlist *AdList) ToConfigmapString() string {
+	return ArrayToString(*adlist)
+}
+
 type ListItem string
 type List []ListItem
 
+func (list *List) ToConfigmapString() string {
+	return ArrayToString(*list)
+}
+
 type RegexListItem string
 type RegexList []RegexListItem
+
+func (item RegexListItem) String() string {
+	return string(item)
+}
+
+func (list *RegexList) ToConfigmapString() string {
+	return ArrayToString(*list)
+}
 
 func (item AdListItem) String() string {
 	return string(item)
@@ -99,14 +121,8 @@ func ArrayToString[T ~string](array []T) string {
 
 	return b.String()
 }
-
-func (adlist *AdList) ArrayToString() string {
-	stringifiedData := ""
-	for _, item := range *adlist {
-		stringifiedData = stringifiedData + item.String() + "\n"
-	}
-
-	return stringifiedData
+func (item ListItem) String() string {
+	return string(item)
 }
 
 type CustomOption string
@@ -117,7 +133,7 @@ func (option CustomOption) String() string {
 
 type CustomOptions []CustomOption
 
-func (options *CustomOptions) ToPiholeConfigString() string {
+func (options *CustomOptions) ToConfigmapString() string {
 	stringifiedData := ""
 	for _, item := range *options {
 		stringifiedData = stringifiedData + item.String() + "\n"

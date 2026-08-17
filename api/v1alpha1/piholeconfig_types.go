@@ -23,29 +23,22 @@ import (
 
 // PiHoleConfigSpec defines the desired state of PiHoleConfig
 type PiHoleConfigSpec struct {
-	// +required
+	// ClusterRef references a PiHoleCluster in the same namespace.
 	ClusterRef ClusterRef `json:"clusterRef"`
 
-	// +optional
-	Adlists AdList `json:"adlists"`
+	Adlists AdList `json:"adlists,omitempty"`
 
-	// +optional
-	Blacklist List `json:"blacklist"`
+	Denylist List `json:"denylist,omitempty"`
 
-	// +optional
-	Whitelist List `json:"whitelist"`
+	Allowlist List `json:"allowlist,omitempty"`
 
-	// +optional
-	Regexlist RegexList `json:"regexlist"`
+	Regexlist RegexList `json:"regexlist,omitempty"`
 
-	// +optional
-	CNAMEs CNAMERecords `json:"cnames"`
+	CNAMEs CNAMERecords `json:"cnames,omitempty"`
 
-	// +optional
-	Hosts HostRecords `json:"hosts"`
+	Hosts HostRecords `json:"hosts,omitempty"`
 
-	// +optional
-	CustomOptions CustomOptions `json:"customOptions"`
+	CustomOptions CustomOptions `json:"customOptions,omitempty"`
 }
 
 // PiHoleConfigStatus defines the observed state of PiHoleConfig.
@@ -69,9 +62,8 @@ type PiHoleConfigStatus struct {
 	// +listMapKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	// TODO FailedAdListItems as status should be added to this list for each item that is unreachable.
-	// Just a simple query to see if statuscode is 400+, add it here
-	FailedAdlistItems []string `json:"failedAdlistItems"`
+
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	ActiveAdlists   int32 `json:"activeAdlists"`
 	AdditionalHosts int32 `json:"additionalHosts"`
@@ -82,6 +74,9 @@ type PiHoleConfigStatus struct {
 // +kubebuilder:subresource:status
 
 // PiHoleConfig is the Schema for the piholeconfigs API
+// +kubebuilder:printcolumn:name="Cluster",type="string",JSONPath=".spec.clusterRef.name"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
 type PiHoleConfig struct {
 	metav1.TypeMeta `json:",inline"`
 

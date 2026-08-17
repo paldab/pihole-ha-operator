@@ -3,13 +3,22 @@ kind: PiHoleCluster
 metadata:
   name: test-pihole
 spec:
-  replicas: 2
+  replicas: 3
 
   image: pihole/pihole:latest
 
+  existingSecretRef:
+    secretName: pihole-admin-password-test
+
+  timezone: Europe/Amsterdam
+
   storage:
     size: 5Gi
-
-  config:
-    TZ: Europe/Amsterdam
-    FTLCONF_dns_listeningMode: all
+---
+apiVersion: v1
+stringData:
+  password: "admin"
+kind: Secret
+metadata:
+  name: pihole-admin-password-test
+type: Opaque
