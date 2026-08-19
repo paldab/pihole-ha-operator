@@ -1,8 +1,5 @@
 package e2e
 
-// Minimal Cluster
-// Highly customized cluster (with DHCP)
-
 import (
 	"encoding/json"
 	"fmt"
