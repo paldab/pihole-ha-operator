@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"maps"
-	"sort"
+	"slices"
 )
 
 func ValueOrDefault[T any](baseValue, defaultValue *T) *T {
@@ -52,7 +52,7 @@ func GetSortedKeysFromMap[K ~string, T any](records map[K]T) []string {
 		keys = append(keys, string(key))
 	}
 
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	return keys
 }
