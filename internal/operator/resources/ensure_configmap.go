@@ -107,6 +107,10 @@ func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
 }
 
 func CreateConfigmapWrapper(rc *ResourceContext, config *v1alpha1.PiHoleConfig, component defaults.PiholeComponent) error {
+	if config == nil {
+		return nil
+	}
+
 	var err error
 
 	switch component {
