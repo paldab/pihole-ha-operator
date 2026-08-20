@@ -60,6 +60,7 @@ jobs:
         with:
           repository: paldab/helm-charts
           token: ${{ secrets.HELM_REPO_TOKEN }}
+          ref: gh-pages
           path: helm-repo
 
       - name: push docker image
