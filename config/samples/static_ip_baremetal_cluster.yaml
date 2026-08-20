@@ -19,15 +19,15 @@ spec:
   config:
     env:
       - name: ServerIP
-        value: 192.168.1.240
+        value: 10.10.10.10
 
   services:
     DNS:
       enabled: true
       type: LoadBalancer
       annotations:
-        metallb.io/loadBalancerIPs: 192.168.1.240
-      loadBalancerIP: 192.168.1.240 # Technically deprecated but also sets environment variables and configurations
+        metallb.io/loadBalancerIPs: 10.10.10.10
+      loadBalancerIP: 10.10.10.10 # Technically deprecated but also sets environment variables and configurations
 ---
 apiVersion: v1
 stringData:

@@ -1,11 +1,15 @@
 apiVersion: pihole.paldab.nl/v1alpha1
 kind: PiHoleCluster
 metadata:
-  name: test-pihole
+  name: minimal-pihole
 spec:
-  replicas: 2
+  replicas: 3
 
-  image: pihole/pihole:latest
+  existingSecretRef:
+    secretName: advanced-pihole-admin-password
+    passwordKey: password
+
+  image: pihole/pihole:2026.05.0
 
   storage:
     size: 5Gi

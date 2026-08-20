@@ -19,7 +19,7 @@ manager:
     repository: ghcr.io/paldab/pihole-ha-operator
     ## Image tag (defaults to Chart.appVersion if not set)
     ##
-    tag: "dev"
+    # tag: "dev"
     pullPolicy: IfNotPresent
 
   ## Arguments
@@ -88,7 +88,7 @@ manager:
 
   ## Termination grace period seconds
   ##
-  terminationGracePeriodSeconds: 10
+  terminationGracePeriodSeconds: 30
 
   ## Custom Deployment labels
   ##

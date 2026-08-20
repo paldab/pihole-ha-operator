@@ -1,9 +1,0 @@
-apiVersion: pihole.paldab.nl/v1alpha1
-kind: PiHoleConfig
-metadata:
-  labels:
-    app.kubernetes.io/name: pihole-ha-operator
-    app.kubernetes.io/managed-by: kustomize
-  name: piholeconfig-sample
-spec:
-  # TODO(user): Add fields here

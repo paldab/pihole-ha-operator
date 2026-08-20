@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: advanced-pihole-admin-password
+stringData:
+  password: "admin"
+type: Opaque
+---
+apiVersion: pihole.paldab.nl/v1alpha1
+kind: PiHoleCluster
+metadata:
+  name: advanced-pihole
+spec:
+  replicas: 3
+  image: pihole/pihole:2026.05.0
+  existingSecretRef:
+    secretName: advanced-pihole-admin-password
+    passwordKey: password
+
+  timezone: Europe/Amsterdam
+
+  storage:
+    size: 5Gi
+
+  dnsUpstreams:
+    - 8.8.8.8
+    - 8.8.4.4
+
+  config:
+    env:
+      - name: FTLCONF_misc_etc_dnsmasq_d
+        value: "true"
+      - name: FTLCONF_dns_listeningMode
+        value: all
+      - name: PIHOLE_GID
+        value: "1000"
+      - name: PIHOLE_UID
+        value: "1000"
+
+  # Statistics external export the queries of all pihole instances to a postgres DB
+  statistics:
+    mode: External
+    external:
+      database:
+        # Assuming the postgres instance is running in the pihole namespace
+        host: postgres.pihole.svc.cluster.local
+        dbName: pihole-statistics
+
+        secretRef:
+          # Need to be present before deploying
+          name: pihole-stats-db-secret
+          usernameKey: username
+          passwordKey: password
+
+  services:
+    dns:
+      type: LoadBalancer
+      loadBalancerIP: 10.10.10.10 # Static DNS route for router to register upstream DNS
+
+    web:
+      annotations:
+        traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+        traefik.ingress.kubernetes.io/service.sticky.cookie.httpOnly: "true"
+        traefik.ingress.kubernetes.io/service.sticky.cookie.name: pihole_backend
+        traefik.ingress.kubernetes.io/service.sticky.cookie.sameSite: lax
+
+  ingress:
+    enabled: true
+    className: ""
+    host: pihole.example.com
+    annotations:
+      cert-manager.io/cluster-issuer: clusterissuer
+    tls:
+      secretName: pihole-tls

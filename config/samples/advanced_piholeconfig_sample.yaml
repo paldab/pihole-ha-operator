@@ -1,0 +1,41 @@
+apiVersion: pihole.paldab.nl/v1alpha1
+kind: PiHoleConfig
+metadata:
+  name: ideal-pihole-configuration
+spec:
+  clusterRef:
+    name: advanced-pihole
+
+  adlists:
+    - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+    - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt
+    - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt
+    - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro.txt
+    - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/doh-vpn-proxy-bypass.txt
+    - https://raw.githubusercontent.com/Perflyst/PiHoleBlocklist/master/android-tracking.txt
+    - https://raw.githubusercontent.com/Perflyst/PiHoleBlocklist/master/SmartTV.txt
+    - https://raw.githubusercontent.com/Perflyst/PiHoleBlocklist/master/AmazonFireTV.txt
+    - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/native.samsung.txt
+    - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/native.amazon.txt
+    - https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt
+    - https://bitbucket.org/ethanr/dns-blacklists/raw/8575c9f96e5b4a1308f2f12394abd86d0927a4a0/bad_lists/Mandiant_APT1_Report_Appendix_D.txt
+    - https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt
+
+  hosts:
+    pihole.home.local: 192.168.1.10
+    nas.home.local: 192.168.1.20
+    router.home.local: 192.168.1.1
+    printer.home.local: 192.168.1.30
+    homeassistant.home.local: 192.168.1.40
+
+  cnames:
+    traefik.home.local:
+      - photos.home.local
+      - dashboard.home.local
+
+    nas.home.local:
+      - storage.home.local
+      - files.home.local
+
+    homeassistant.home.local:
+      - ha.home.local

@@ -9,6 +9,9 @@ LDFLAGS := \
 	-X github.com/paldab/pihole-ha-operator/version.Version=$(VERSION) \
 	-X github.com/paldab/pihole-ha-operator/version.GitCommit=$(GIT_COMMIT)
 
+export IMG
+export EXPORTER_IMG
+
 # YEAR defines the year value used for substituting the YEAR placeholder in the boilerplate header.
 YEAR ?= $(shell date +%Y)
 
@@ -303,7 +306,7 @@ HELM_NAMESPACE ?= pihole-ha-operator-system
 ## Name of the Helm release
 HELM_RELEASE ?= pihole-ha-operator
 ## Path to the Helm chart directory
-HELM_CHART_DIR ?= dist/chart
+HELM_CHART_DIR ?= charts/pihole-ha-operator
 ## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
 
@@ -320,7 +323,7 @@ helm-deploy: install-helm ## Deploy manager to the K8s cluster via Helm. Specify
 		--namespace $(HELM_NAMESPACE) \
 		--create-namespace \
 		--set manager.image.repository=$${IMG%:*} \
-		--set manager.image.tag=$${IMG##*:} \
+		--set manager.image.tag=$(VERSION) \
 		--wait \
 		--timeout 5m \
 		$(HELM_EXTRA_ARGS)
@@ -340,3 +343,9 @@ helm-history: ## Show Helm release history.
 .PHONY: helm-rollback
 helm-rollback: ## Rollback to previous Helm release.
 	$(HELM) rollback $(HELM_RELEASE) --namespace $(HELM_NAMESPACE)
+
+.PHONY: helm-test-deploy
+helm-test-deploy: setup-test-e2e
+	$(KIND) load docker-image $(IMG) \
+  --name $(KIND_CLUSTER)
+
