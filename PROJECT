@@ -6,6 +6,10 @@ cliVersion: 4.15.0
 domain: paldab.nl
 layout:
 - go.kubebuilder.io/v4
+plugins:
+  helm.kubebuilder.io/v2-alpha:
+    manifests: dist/install.yaml
+    output: dist
 projectName: pihole-ha-operator
 repo: github.com/paldab/pihole-ha-operator
 resources:
