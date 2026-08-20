@@ -2,12 +2,11 @@ name: Build and push images test
 
 on:
   push:
-    branches:
-      - feature/road-to-v1
+    tags:
+      - "test*.*.*" # semver
 
 jobs:
   push_to_registry:
-    needs: e2e
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
 
