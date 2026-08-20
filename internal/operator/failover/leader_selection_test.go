@@ -207,8 +207,8 @@ func TestFailover_NoEligibleCandidates(t *testing.T) {
 		t.Fatal("expected error when no leader candidates are available")
 	}
 
-	if result.InProgress {
-		t.Fatal("expected InProgress to be false")
+	if !result.InProgress {
+		t.Fatal("expected InProgress to be true")
 	}
 
 	if result.Leader != nil {

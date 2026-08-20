@@ -9,27 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type LeaderElectionState struct {
-	CurrentLeader             *corev1.Pod
-	PreviousLeader            *corev1.Pod
-	AvailableLeaderCandidates corev1.PodList
-}
-
-type FailoverStatus struct {
-	InProgress bool
-	LeaderName *string
-	Reason     string
-	Message    string
-}
-
-type FailoverResult struct {
-	InProgress bool
-	Leader     *corev1.Pod
-	Reason     string
-}
-
-type UpdateStatusFunc = func(*FailoverResult) error
-
 // Failover checks if there is a leader currently and promotes one of the pods if there is not a stable leader. Returns error
 func Failover(ctx context.Context, k8sClient client.Client, electionState LeaderElectionState) (FailoverResult, error) {
 	leaderCandidates := electionState.AvailableLeaderCandidates
@@ -80,7 +59,7 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 	return FailoverResult{
 		InProgress: false,
 		Leader:     firstAvailableLeaderCanidate,
-		Reason:     ReasonFailoverComplete,
+		Reason:     ReasonFailoverCompleted,
 	}, nil
 }
 
