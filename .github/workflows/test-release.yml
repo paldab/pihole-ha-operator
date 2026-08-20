@@ -50,7 +50,7 @@ jobs:
       - name: Inspect packaged chart
         shell: bash
         run: |
-          CHART_VERSION="${GITHUB_REF_NAME#v}"
+          CHART_VERSION="${GITHUB_REF_NAME#test}"
 
           helm show chart \
             "dist/pihole-ha-operator-${CHART_VERSION}.tgz"
@@ -70,7 +70,7 @@ jobs:
       - name: Publish Helm chart
         shell: bash
         run: |
-          CHART_VERSION="${GITHUB_REF_NAME#v}"
+          CHART_VERSION="${GITHUB_REF_NAME#test}"
           CHART="pihole-ha-operator-${CHART_VERSION}.tgz"
 
           cp "dist/${CHART}" helm-repo/
