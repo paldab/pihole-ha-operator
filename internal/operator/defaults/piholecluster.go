@@ -93,7 +93,7 @@ func defaultDNSUpstream(obj *piholev1alpha1.PiHoleCluster) {
 	}
 }
 
-func RequiredPiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
+func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  "TZ",
@@ -117,6 +117,14 @@ func RequiredPiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, time
 		{
 			Name:  "FTLCONF_files_database",
 			Value: PiholeFTLDBPath,
+		},
+		{
+			Name:  "PIHOLE_GID",
+			Value: "1000",
+		},
+		{
+			Name:  "PIHOLE_GID",
+			Value: "1000",
 		},
 	}
 }
@@ -177,18 +185,23 @@ func DefaultPiholeContainerPorts(webPort, dnsPort int32, dhcpEnabled bool) []cor
 			ContainerPort: dnsPort,
 			Protocol:      corev1.Protocol("UDP"),
 		},
-		{
-			Name:          "client-udp",
-			ContainerPort: 67,
-			Protocol:      corev1.Protocol("UDP"),
-		},
 	}
 
 	dhcpPorts := []corev1.ContainerPort{
 		{
-			Name:          "client-dhcp",
+			Name:          "server-dhcp",
 			ContainerPort: 67,
-			Protocol:      corev1.Protocol("TCP"),
+			Protocol:      corev1.Protocol("UDP"),
+		},
+		{
+			Name:          "client-dhcp",
+			ContainerPort: 68,
+			Protocol:      corev1.Protocol("UDP"),
+		},
+		{
+			Name:          "dhcpv6",
+			ContainerPort: 547,
+			Protocol:      corev1.Protocol("UDP"),
 		},
 	}
 

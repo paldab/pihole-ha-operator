@@ -75,6 +75,6 @@ var PiholeStaticMountConfig = PiholeVolumeConfigMap{
 
 	Regexlist: PiholeVolumeConfig{
 		Key:       VolumeMountRegexlistKey,
-		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, Regexlist),
+		MountPath: fmt.Sprintf("%s/%s", PiholeConfigDir, VolumeMountRegexlistKey),
 	},
 }

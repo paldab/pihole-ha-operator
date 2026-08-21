@@ -50,7 +50,7 @@ func EnsureConfigmap(rc *ResourceContext, data PiholeConfigItem, component defau
 	}
 
 	desiredData := map[string]string{
-		defaults.VolumeMountAdlistKey: stringifiedData,
+		defaults.PiholeStaticMountConfig[component].Key: stringifiedData,
 	}
 
 	_, err = controllerutil.CreateOrPatch(rc.Ctx, rc.K8sClient, configmap, func() error {

@@ -4,6 +4,7 @@ import (
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func defaultConfigProbes(config *piholev1alpha1.PiHolePodConfig) {
@@ -51,18 +52,29 @@ func defaultConfigAffinity(obj *piholev1alpha1.PiHoleCluster) {
 	}
 }
 
+func IsDHCPEnabled(services *piholev1alpha1.PiHoleServiceSpec) bool {
+	return services != nil &&
+		services.DHCP != nil &&
+		ptr.Deref(services.DHCP.Enabled, false)
+}
+
 func defaultConfigSecurityContext(obj *piholev1alpha1.PiHoleCluster) {
 	if obj.Spec.Config.SecurityContext != nil {
 		return
 	}
 
 	capabilities := DefaultContainerCapablilties
-	privileged := false
+
+	// Add DHCP capabilities if enabled
+	if IsDHCPEnabled(obj.Spec.Services) {
+		capabilities = append(capabilities, DHCPContainerCapabilities...)
+	}
 
 	obj.Spec.Config.SecurityContext = &corev1.SecurityContext{
-		Privileged: &privileged,
+		Privileged: new(false),
 		Capabilities: &corev1.Capabilities{
-			Add: capabilities,
+			Add:  capabilities,
+			Drop: []corev1.Capability{"ALL"},
 		},
 	}
 }
