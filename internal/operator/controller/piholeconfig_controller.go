@@ -139,12 +139,6 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Reconciling PiHoleConfig",
-		"name", piholeConfig.Name,
-		"namespace", piholeConfig.Namespace,
-		"cluster", piholeCluster.Name,
-	)
-
 	configCopy := piholeConfig.DeepCopy()
 	defaults.ApplyDefaultConfigValues(configCopy, &piholeCluster)
 

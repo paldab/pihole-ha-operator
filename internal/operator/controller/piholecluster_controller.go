@@ -70,11 +70,6 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
-	log.Info("Reconciling PiHoleCluster",
-		"namespace", req.Namespace,
-		"name", req.Name,
-	)
-
 	clusterCopy := piholeCluster.DeepCopy()
 
 	defaults.ApplyDefaultClusterValues(clusterCopy)

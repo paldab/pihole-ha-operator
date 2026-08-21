@@ -7,14 +7,17 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Failover checks if there is a leader currently and promotes one of the pods if there is not a stable leader. Returns error
 func Failover(ctx context.Context, k8sClient client.Client, electionState LeaderElectionState) (FailoverResult, error) {
+	log := logf.FromContext(ctx)
 	leaderCandidates := electionState.AvailableLeaderCandidates
 
 	if electionState.PreviousLeader != nil {
 		if err := demoteToStandby(ctx, k8sClient, electionState.PreviousLeader); err != nil {
+			log.Info("pihole leader became unhealthy", "pod", electionState.PreviousLeader.Name)
 			return FailoverResult{
 				InProgress: true,
 				Leader:     nil,
@@ -55,6 +58,8 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 			Reason:     ReasonDemotionFailed,
 		}, err
 	}
+
+	log.Info("leader elected", "pod", firstAvailableLeaderCanidate.Name)
 
 	return FailoverResult{
 		InProgress: false,
