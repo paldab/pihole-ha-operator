@@ -41,15 +41,7 @@ func main() {
 	exporterConfig = envs.GetExporterEnvironments(defaultBatchSize, defaultInterval)
 	externalDatabaseConfig := envs.GetDatabaseConfigFromEnvs()
 
-	ftlDBPath := envs.GetPiholeFTLDBPath(defaultFTLDBPath)
-	piholeLocalDBFile := fmt.Sprintf("file:%s?mode=ro", ftlDBPath)
-	localDB, err := database.NewDB("sqlite", piholeLocalDBFile)
-
-	if err != nil {
-		log.Fatalf("could not connect to the pihole sqlite database on path %s, err: %v", ftlDBPath, err)
-	}
-	defer localDB.Close() //nolint:errcheck
-
+	// initial connection to external postgres
 	externalPostgresConnString := database.CreatePostgresConnString(externalDatabaseConfig)
 	migrationDBConn, err := database.NewDB("pgx", externalPostgresConnString)
 
@@ -61,6 +53,41 @@ func main() {
 		log.Fatal(err)
 	}
 	migrationDBConn.Close() //nolint:errcheck
+
+	// initial connection to pihole FTL db
+	// keep trying until there is no lock on pihole FTL db. MAX 2 min
+	var localDB *sql.DB
+	ftlDBPath := envs.GetPiholeFTLDBPath(defaultFTLDBPath)
+	piholeLocalDBFile := fmt.Sprintf("file:%s?mode=ro", ftlDBPath)
+	deadline := time.Now().Add(2 * time.Minute)
+
+	for {
+		localDB, err = database.NewDB("sqlite", piholeLocalDBFile)
+
+		if err == nil {
+			break
+		}
+
+		if database.IsSQLiteBusy(err) {
+			if time.Now().After(deadline) {
+				log.Fatalf(
+					"pihole database remained locked for more than 2 minutes: %v",
+					err,
+				)
+			}
+
+			log.Printf("pihole database is locked, retrying in 15 seconds")
+			time.Sleep(15 * time.Second)
+			continue
+		}
+
+		log.Fatalf(
+			"could not connect to the pihole sqlite database on path %s, err: %v",
+			ftlDBPath,
+			err,
+		)
+	}
+	defer localDB.Close() //nolint:errcheck
 
 	ctx := context.Background()
 	pool, err := database.NewPostgresPool(ctx, externalDatabaseConfig)
