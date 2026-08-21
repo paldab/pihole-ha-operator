@@ -2,6 +2,7 @@ package builders
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
@@ -11,10 +12,9 @@ import (
 )
 
 func BuildPiholeContainer(cluster *piholev1alpha1.PiHoleCluster, volumeMounts []corev1.VolumeMount) corev1.Container {
-	requiredEnvs := defaults.BasePiholeEnvs(cluster.Spec.ExistingSecretRef, *cluster.Spec.TimeZone, defaults.WebserverPort, cluster.Spec.DNSUpstreams)
-	additionalEnvs := defaults.AdditionalPiholeEnvs(cluster)
-	containerEnvs := append(requiredEnvs, additionalEnvs...)
-	piholeEnvs := append(containerEnvs, cluster.Spec.Config.Env...)
+	baseEnvs := defaults.BasePiholeEnvs(cluster.Spec.ExistingSecretRef, *cluster.Spec.TimeZone, defaults.WebserverPort, cluster.Spec.DNSUpstreams)
+	dynamicEnvs := defaults.DynamicPiholeEnvs(cluster)
+	piholeEnvs := filterEnvsPreferUserInput(slices.Concat(baseEnvs, dynamicEnvs, cluster.Spec.Config.Env))
 
 	isDCHPEnabled := defaults.IsDHCPEnabled(cluster.Spec.Services)
 	containerPorts := defaults.DefaultPiholeContainerPorts(defaults.WebserverPort, defaults.DNSPort, isDCHPEnabled)
@@ -118,4 +118,27 @@ func BuildStatsExporterContainer(clusterUUID string, StatisticsSyncConfig *pihol
 			},
 		},
 	}, nil
+}
+
+func filterEnvsPreferUserInput(envs []corev1.EnvVar) []corev1.EnvVar {
+	if len(envs) == 0 {
+		return []corev1.EnvVar{}
+	}
+
+	seen := make(map[string]struct{}, len(envs))
+	result := make([]corev1.EnvVar, 0, len(envs))
+
+	for _, env := range slices.Backward(envs) {
+		if _, exists := seen[env.Name]; exists {
+			continue
+		}
+
+		seen[env.Name] = struct{}{}
+		result = append(result, env)
+	}
+
+	// Reverse so the final output keeps the original order
+	slices.Reverse(result)
+
+	return result
 }

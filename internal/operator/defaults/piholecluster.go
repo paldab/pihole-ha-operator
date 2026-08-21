@@ -129,7 +129,7 @@ func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone
 	}
 }
 
-func AdditionalPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar {
+func DynamicPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar {
 	var envs = []corev1.EnvVar{}
 
 	if cluster.Spec.DNSUpstreams != nil {
