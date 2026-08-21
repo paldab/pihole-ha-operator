@@ -73,8 +73,8 @@ func defaultConfigSecurityContext(obj *piholev1alpha1.PiHoleCluster) {
 	obj.Spec.Config.SecurityContext = &corev1.SecurityContext{
 		Privileged: new(false),
 		Capabilities: &corev1.Capabilities{
-			Add:  capabilities,
-			Drop: []corev1.Capability{"ALL"},
+			Add: capabilities,
+			// Drop: []corev1.Capability{"ALL"},
 		},
 	}
 }

@@ -20,7 +20,6 @@ func BuildPiholeContainer(cluster *piholev1alpha1.PiHoleCluster, volumeMounts []
 	containerPorts := defaults.DefaultPiholeContainerPorts(defaults.WebserverPort, defaults.DNSPort, isDCHPEnabled)
 
 	return corev1.Container{
-
 		Name:  defaults.ApplicationName,
 		Image: cluster.Spec.Image,
 		Ports: containerPorts,

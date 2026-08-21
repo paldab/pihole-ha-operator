@@ -23,10 +23,13 @@ var DefaultDNSUpstreams = []string{
 }
 
 var DefaultContainerCapablilties = []corev1.Capability{
+	"CHOWN",
+	"SETFCAP",
 	"SYS_NICE",
 	"SYS_TIME",
+}
+
+var DHCPContainerCapabilities = []corev1.Capability{
 	"NET_BIND_SERVICE",
-	"CAP_CHOWN",
-	"CAP_NET_BIND_SERVICE",
-	"CAP_NET_RAW",
+	"NET_RAW",
 }
