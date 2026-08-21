@@ -86,6 +86,12 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Scheme:    r.Scheme,
 	}
 
+	// create empty configmaps
+	if err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext); err != nil {
+		log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
+		return ctrl.Result{}, err
+	}
+
 	if err := resources.EnsureStatefulSet(&resourceContext); err != nil {
 		log.Error(err, "failed to reconcile StatefulSet")
 		return ctrl.Result{}, err
@@ -98,12 +104,6 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	if err := resources.EnsureIngress(&resourceContext); err != nil {
 		log.Error(err, "failed to reconcile Ingress")
-		return ctrl.Result{}, err
-	}
-
-	// create empty configmaps
-	if err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext); err != nil {
-		log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
 		return ctrl.Result{}, err
 	}
 

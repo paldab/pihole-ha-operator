@@ -84,6 +84,7 @@ func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
 	}
 
 	createdConfigMapNames := make([]string, 0, len(existingConfigmaps.Items))
+
 	for _, cm := range existingConfigmaps.Items {
 		createdConfigMapNames = append(createdConfigMapNames, cm.Name)
 	}
@@ -108,7 +109,8 @@ func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
 
 func CreateConfigmapWrapper(rc *ResourceContext, config *v1alpha1.PiHoleConfig, component defaults.PiholeComponent) error {
 	if config == nil {
-		return nil
+		emptyConfig := v1alpha1.PiHoleConfig{Spec: v1alpha1.PiHoleConfigSpec{}}
+		return EnsureConfigmap(rc, &emptyConfig.Spec.Adlists, component)
 	}
 
 	var err error

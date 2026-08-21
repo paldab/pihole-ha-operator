@@ -104,7 +104,7 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 	Context("PiHoleCluster reconciliation", func() {
 		It("ensuring configmaps are created on cluster creation", func() {
 			By("checking if the configmaps are present")
-			Eventually(func() {
+			Eventually(func() error {
 				cmd := exec.Command(
 					"kubectl",
 					"get",
@@ -127,7 +127,9 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 					HaveLen(expectedConfigmapLen),
 					fmt.Sprintf("expecting %d configmaps but found %d", expectedConfigmapLen, len(configmaps.Items)),
 				)
-			}).Should(Succeed())
+
+				return err
+			}, time.Minute, 2*time.Second).Should(Succeed())
 		})
 
 		It("ensuring statefulset of piholecluster have been created with the correct configuration", func() {
