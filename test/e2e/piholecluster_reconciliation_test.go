@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
-	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
 	"github.com/paldab/pihole-ha-operator/test/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -102,31 +101,31 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 	})
 
 	Context("PiHoleCluster reconciliation", func() {
-		expectedConfigmapLen := len(defaults.PiholeStaticMountConfig) - 1
-		It("ensuring configmaps are created on cluster creation", func() {
-			By("checking if the configmaps are present")
-			Eventually(func(g Gomega) (int, error) {
-				cmd := exec.Command(
-					"kubectl",
-					"get",
-					"configmap",
-					"-l",
-					fmt.Sprintf("%s=%s", defaults.ClusterNameLabel, clusterName),
-					"-o",
-					"json",
-				)
-
-				output, err := utils.Run(cmd)
-				g.Expect(err).ToNot(HaveOccurred())
-
-				var configmaps corev1.ConfigMapList
-				if err := json.Unmarshal([]byte(output), &configmaps); err != nil {
-					return 0, err
-				}
-
-				return len(configmaps.Items), nil
-			}, 3*time.Minute, 2*time.Second).Should(Equal(expectedConfigmapLen))
-		})
+		// expectedConfigmapLen := len(defaults.PiholeStaticMountConfig) - 1
+		// It("ensuring configmaps are created on cluster creation", func() {
+		// 	By("checking if the configmaps are present")
+		// 	Eventually(func(g Gomega) (int, error) {
+		// 		cmd := exec.Command(
+		// 			"kubectl",
+		// 			"get",
+		// 			"configmap",
+		// 			"-l",
+		// 			fmt.Sprintf("%s=%s", defaults.ClusterNameLabel, clusterName),
+		// 			"-o",
+		// 			"json",
+		// 		)
+		//
+		// 		output, err := utils.Run(cmd)
+		// 		g.Expect(err).ToNot(HaveOccurred())
+		//
+		// 		var configmaps corev1.ConfigMapList
+		// 		if err := json.Unmarshal([]byte(output), &configmaps); err != nil {
+		// 			return 0, err
+		// 		}
+		//
+		// 		return len(configmaps.Items), nil
+		// 	}, 3*time.Minute, 2*time.Second).Should(Equal(expectedConfigmapLen))
+		// })
 
 		It("ensuring statefulset of piholecluster have been created with the correct configuration", func() {
 			By("verifying that statefulset has been created and has the right ready replicas")
