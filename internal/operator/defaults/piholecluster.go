@@ -96,10 +96,6 @@ func defaultDNSUpstream(obj *piholev1alpha1.PiHoleCluster) {
 func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name:  "TZ",
-			Value: timezone,
-		},
-		{
 			Name:  "FTLCONF_webserver_port",
 			Value: strconv.FormatInt(int64(webserverPort), 10),
 		},
@@ -126,6 +122,10 @@ func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone
 			Name:  "PIHOLE_GID",
 			Value: "1000",
 		},
+		{
+			Name:  "TZ",
+			Value: timezone,
+		},
 	}
 }
 
@@ -145,6 +145,11 @@ func DynamicPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar {
 		if cluster.Spec.Ingress.Host != nil {
 			envs = append(envs, corev1.EnvVar{
 				Name:  "VIRTUAL_HOST",
+				Value: *cluster.Spec.Ingress.Host,
+			})
+
+			envs = append(envs, corev1.EnvVar{
+				Name:  "FTLCONF_webserver_domain",
 				Value: *cluster.Spec.Ingress.Host,
 			})
 		}
