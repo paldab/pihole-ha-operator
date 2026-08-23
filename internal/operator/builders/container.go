@@ -12,7 +12,7 @@ import (
 )
 
 func BuildPiholeContainer(cluster *piholev1alpha1.PiHoleCluster, volumeMounts []corev1.VolumeMount) corev1.Container {
-	baseEnvs := defaults.BasePiholeEnvs(cluster.Spec.ExistingSecretRef, *cluster.Spec.TimeZone, defaults.WebserverPort, cluster.Spec.DNSUpstreams)
+	baseEnvs := defaults.BasePiholeEnvs(cluster.Spec.ExistingSecretRef, *cluster.Spec.TimeZone, cluster.Spec.DNSUpstreams)
 	dynamicEnvs := defaults.DynamicPiholeEnvs(cluster)
 	piholeEnvs := filterEnvsPreferUserInput(slices.Concat(baseEnvs, dynamicEnvs, cluster.Spec.Config.Env))
 

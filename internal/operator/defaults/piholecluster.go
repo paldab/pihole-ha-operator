@@ -2,7 +2,6 @@ package defaults
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
@@ -93,12 +92,8 @@ func defaultDNSUpstream(obj *piholev1alpha1.PiHoleCluster) {
 	}
 }
 
-func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
+func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, DNSUpstreams []string) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{
-			Name:  "FTLCONF_webserver_port",
-			Value: strconv.FormatInt(int64(webserverPort), 10),
-		},
 		{
 			Name: "FTLCONF_webserver_api_password",
 			ValueFrom: &corev1.EnvVarSource{
