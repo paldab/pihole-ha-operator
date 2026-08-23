@@ -7,35 +7,17 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-type LeaderElectionState struct {
-	CurrentLeader             *corev1.Pod
-	PreviousLeader            *corev1.Pod
-	AvailableLeaderCandidates corev1.PodList
-}
-
-type FailoverStatus struct {
-	InProgress bool
-	LeaderName *string
-	Reason     string
-	Message    string
-}
-
-type FailoverResult struct {
-	InProgress bool
-	Leader     *corev1.Pod
-	Reason     string
-}
-
-type UpdateStatusFunc = func(*FailoverResult) error
 
 // Failover checks if there is a leader currently and promotes one of the pods if there is not a stable leader. Returns error
 func Failover(ctx context.Context, k8sClient client.Client, electionState LeaderElectionState) (FailoverResult, error) {
+	log := logf.FromContext(ctx)
 	leaderCandidates := electionState.AvailableLeaderCandidates
 
 	if electionState.PreviousLeader != nil {
 		if err := demoteToStandby(ctx, k8sClient, electionState.PreviousLeader); err != nil {
+			log.Info("pihole leader became unhealthy", "pod", electionState.PreviousLeader.Name)
 			return FailoverResult{
 				InProgress: true,
 				Leader:     nil,
@@ -47,9 +29,9 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 	// handle case where somehow leaderCandidates are still empty
 	if len(leaderCandidates.Items) == 0 {
 		return FailoverResult{
-			InProgress: false,
+			InProgress: true,
 			Leader:     nil,
-			Reason:     ReasonNoEligibleLeader,
+			Reason:     ReasonLeaderUnavailable,
 		}, fmt.Errorf("there is currently no leader and there are no candidates to become the pihole leader")
 	}
 
@@ -73,14 +55,16 @@ func Failover(ctx context.Context, k8sClient client.Client, electionState Leader
 		return FailoverResult{
 			InProgress: false,
 			Leader:     nil,
-			Reason:     ReasonPromotionFailed,
+			Reason:     ReasonDemotionFailed,
 		}, err
 	}
+
+	log.Info("leader elected", "pod", firstAvailableLeaderCanidate.Name)
 
 	return FailoverResult{
 		InProgress: false,
 		Leader:     firstAvailableLeaderCanidate,
-		Reason:     ReasonFailoverComplete,
+		Reason:     ReasonFailoverCompleted,
 	}, nil
 }
 
@@ -102,8 +86,6 @@ func GetLeaderElectionState(availabePiholePods *corev1.PodList) LeaderElectionSt
 			// if pod is already primary but no longer ready to stay primary, reset state
 			if isLeaderPod {
 				previousLeader = pod
-				// currentLeader = nil
-				// demoteFromLeader(pod)
 			}
 
 			continue

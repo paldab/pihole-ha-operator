@@ -2,19 +2,30 @@
 package status
 
 const (
-	TypeReady              = "Ready"
-	TypeFailoverInProgress = "FailoverInProgress"
+	TypeReady       = "Ready"
+	TypeFailingOver = "FailoverInProgress"
 )
 
 const (
-	ReasonNoEligibleLeader = "NoEligibleLeader"
-	ReasonFailoverComplete = "FailoverComplete"
-	ReasonLeaderUnhealthy  = "LeaderUnhealthy"
-	ReasonPromotionFailed  = "LeaderPromotionFailed"
+	ConditionClusterReady = "Ready"
+	ConditionFailingOver  = "FailingOver"
 )
 
-var FailoverReasonMessages = map[string]string{
-	ReasonNoEligibleLeader: "There is not a single pod stable enough to become a leader",
-	ReasonFailoverComplete: "Failover comeplete",
-	ReasonLeaderUnhealthy:  "Leader has become unhealthy and can't receive traffic",
-}
+const (
+	ReasonClusterHealthy      = "ClusterHealthy"
+	ReasonStatefulSetNotReady = "StatefulSetNotReady"
+	ReasonStatefulSetUpdating = "StatefulSetUpdating"
+	ReasonLeaderUnavailable   = "LeaderUnavailable"
+	ReasonFailoverInProgress  = "FailoverInProgress"
+	ReasonFailoverCompleted   = "FailoverCompleted"
+)
+
+// PiholeConfig
+const (
+	ConditionConfigReady = "Ready"
+
+	ReasonConfigurationApplied = "ConfigurationApplied"
+	ReasonDuplicateClusterRef  = "DuplicateClusterRef"
+	ReasonClusterNotFound      = "ClusterNotFound"
+	ReasonReconcileFailed      = "ReconcileFailed"
+)

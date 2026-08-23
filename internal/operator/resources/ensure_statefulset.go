@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func applyStatefulSetMetaData(currentSts, desiredSts *appsv1.StatefulSet) {
@@ -27,6 +28,7 @@ func applyMutableStatefulSetFields(currentSts, desiredSts *appsv1.StatefulSet) {
 }
 
 func EnsureStatefulSet(rc *ResourceContext) error {
+	log := logf.FromContext(rc.Ctx)
 	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster.Name)
 	podLabels := defaults.PiholePodLabels(rc.Cluster)
 	configVolumes, configVolumeMounts := getPiholeConfigVolumes(rc.Cluster.Name)
@@ -59,8 +61,10 @@ func EnsureStatefulSet(rc *ResourceContext) error {
 
 		if isNewSts {
 			currentSts.Spec = desiredSts.Spec
+			log.Info("created statefulset", "name", desiredSts.Name)
 		} else {
 			applyMutableStatefulSetFields(currentSts, desiredSts)
+			log.Info("updating statefulset", "name", desiredSts.Name)
 		}
 
 		return ctrl.SetControllerReference(rc.Cluster, currentSts, rc.K8sClient.Scheme())

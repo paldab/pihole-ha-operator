@@ -1,0 +1,22 @@
+apiVersion: v2
+name: pihole-ha-operator
+description: A Helm chart to distribute pihole-ha-operator
+type: application
+
+version: 0.1.0
+appVersion: "v0.1.0"
+
+home: https://github.com/paldab/pihole-ha-operator
+
+sources:
+  - https://github.com/paldab/pihole-ha-operator
+
+maintainers:
+  - name: paldab
+
+icon: https://wp-cdn.pi-hole.net/wp-content/uploads/2016/12/Vortex-R.png
+
+keywords:
+  - kubernetes
+  - operator
+  - pihole

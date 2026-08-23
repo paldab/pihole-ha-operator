@@ -41,15 +41,7 @@ func main() {
 	exporterConfig = envs.GetExporterEnvironments(defaultBatchSize, defaultInterval)
 	externalDatabaseConfig := envs.GetDatabaseConfigFromEnvs()
 
-	ftlDBPath := envs.GetPiholeFTLDBPath(defaultFTLDBPath)
-	piholeLocalDBFile := fmt.Sprintf("file:%s?mode=ro", ftlDBPath)
-	localDB, err := database.NewDB("sqlite", piholeLocalDBFile)
-
-	if err != nil {
-		log.Fatalf("could not connect to the pihole sqlite database on path %s, err: %v", ftlDBPath, err)
-	}
-	defer localDB.Close() //nolint:errcheck
-
+	// initial connection to external postgres
 	externalPostgresConnString := database.CreatePostgresConnString(externalDatabaseConfig)
 	migrationDBConn, err := database.NewDB("pgx", externalPostgresConnString)
 
@@ -61,6 +53,19 @@ func main() {
 		log.Fatal(err)
 	}
 	migrationDBConn.Close() //nolint:errcheck
+
+	log.Printf("connecting with pihole FTL database...")
+	ftlDBPath := envs.GetPiholeFTLDBPath(defaultFTLDBPath)
+	if err := database.WaitForFTLDatabasePresent(ftlDBPath, 2*time.Minute); err != nil {
+		log.Fatal(err)
+	}
+
+	localDB, err := database.WaitForFTLDatabaseNotBusy(ftlDBPath, 2*time.Minute)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer localDB.Close() //nolint:errcheck
+	log.Printf("connection successful with pihole FTL database")
 
 	ctx := context.Background()
 	pool, err := database.NewPostgresPool(ctx, externalDatabaseConfig)

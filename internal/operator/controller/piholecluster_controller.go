@@ -19,9 +19,11 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -33,6 +35,7 @@ import (
 	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
 	"github.com/paldab/pihole-ha-operator/internal/operator/failover"
 	"github.com/paldab/pihole-ha-operator/internal/operator/resources"
+	"github.com/paldab/pihole-ha-operator/internal/operator/status"
 )
 
 // PiHoleClusterReconciler reconciles a PiHoleCluster object
@@ -67,11 +70,6 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
-	log.Info("Reconciling PiHoleCluster",
-		"namespace", req.Namespace,
-		"name", req.Name,
-	)
-
 	clusterCopy := piholeCluster.DeepCopy()
 
 	defaults.ApplyDefaultClusterValues(clusterCopy)
@@ -81,6 +79,12 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		K8sClient: r.Client,
 		Cluster:   clusterCopy,
 		Scheme:    r.Scheme,
+	}
+
+	// create empty configmaps
+	if err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext); err != nil {
+		log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
+		return ctrl.Result{}, err
 	}
 
 	if err := resources.EnsureStatefulSet(&resourceContext); err != nil {
@@ -95,12 +99,6 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	if err := resources.EnsureIngress(&resourceContext); err != nil {
 		log.Error(err, "failed to reconcile Ingress")
-		return ctrl.Result{}, err
-	}
-
-	// create empty configmaps
-	if err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext); err != nil {
-		log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
 		return ctrl.Result{}, err
 	}
 
@@ -123,14 +121,41 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
+	var failoverResult failover.FailoverResult
+	var err error
+
 	desiredReplicas := ptr.Deref(piholeCluster.Spec.Replicas, int32(1))
-	updateFailoverStatusFunc := resources.UpdateFailoverStatus(&resourceContext, managedSts)
+
 	if desiredReplicas == 1 && len(clusterOwnedpods.Items) == 1 {
 		onlyPod := clusterOwnedpods.Items[0]
-		return failover.ReconcileFailoverSingleInstance(ctx, r.Client, &onlyPod, updateFailoverStatusFunc)
+		failoverResult, err = failover.ReconcileFailoverSingleInstance(ctx, r.Client, &onlyPod)
 	} else if desiredReplicas > 1 {
-		// future syncing here
-		return failover.ReconcileFailoverMultiInstance(ctx, r.Client, clusterOwnedpods, updateFailoverStatusFunc)
+		failoverResult, err = failover.ReconcileFailoverMultiInstance(ctx, r.Client, clusterOwnedpods)
+	}
+
+	if err != nil {
+		// handle startup cases where pods are still getting ready
+		if failoverResult.Reason == failover.ReasonLeaderUnavailable {
+			if err := status.UpdateClusterStatus(&resourceContext, managedSts, &failoverResult); err != nil {
+				log.Error(err, "failed to update Pihole cluster status",
+					"cluster", clusterCopy.Name,
+					"failover_reason", failoverResult.Reason)
+				return ctrl.Result{}, err
+			}
+
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+		}
+
+		log.Error(err, "something went wrong during the failover process")
+		return ctrl.Result{}, err
+	}
+
+	if err := status.UpdateClusterStatus(&resourceContext, managedSts, &failoverResult); err != nil {
+		log.Error(err, "failed to update Pihole cluster status",
+			"cluster", clusterCopy.Name,
+			"leader", failoverResult.Leader.Name,
+			"failover_reason", failoverResult.Reason)
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -141,7 +166,9 @@ func (r *PiHoleClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piholev1alpha1.PiHoleCluster{}).
 		Owns(&appsv1.StatefulSet{}).
-		// Owns(&corev1.Pod{}).
+		Owns(&corev1.Service{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&networkingv1.Ingress{}).
 		Named("piholecluster").
 		Complete(r)
 }

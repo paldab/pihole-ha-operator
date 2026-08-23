@@ -1,6 +1,8 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 func NewDB(driver, connectionString string) (*sql.DB, error) {
 	db, err := sql.Open(driver, connectionString)

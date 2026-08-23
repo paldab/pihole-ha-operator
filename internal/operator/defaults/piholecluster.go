@@ -2,7 +2,6 @@ package defaults
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
@@ -93,16 +92,8 @@ func defaultDNSUpstream(obj *piholev1alpha1.PiHoleCluster) {
 	}
 }
 
-func RequiredPiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, webserverPort int32, DNSUpstreams []string) []corev1.EnvVar {
+func BasePiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, timezone string, DNSUpstreams []string) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{
-			Name:  "TZ",
-			Value: timezone,
-		},
-		{
-			Name:  "FTLCONF_webserver_port",
-			Value: strconv.FormatInt(int64(webserverPort), 10),
-		},
 		{
 			Name: "FTLCONF_webserver_api_password",
 			ValueFrom: &corev1.EnvVarSource{
@@ -118,10 +109,22 @@ func RequiredPiholeEnvs(secretRef piholev1alpha1.ExistingPasswordSecretRef, time
 			Name:  "FTLCONF_files_database",
 			Value: PiholeFTLDBPath,
 		},
+		{
+			Name:  "PIHOLE_GID",
+			Value: "1000",
+		},
+		{
+			Name:  "PIHOLE_GID",
+			Value: "1000",
+		},
+		{
+			Name:  "TZ",
+			Value: timezone,
+		},
 	}
 }
 
-func AdditionalPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar {
+func DynamicPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar {
 	var envs = []corev1.EnvVar{}
 
 	if cluster.Spec.DNSUpstreams != nil {
@@ -134,10 +137,17 @@ func AdditionalPiholeEnvs(cluster *piholev1alpha1.PiHoleCluster) []corev1.EnvVar
 	}
 
 	if cluster.Spec.Ingress != nil {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "VIRTUAL_HOST",
-			Value: *cluster.Spec.Ingress.Host,
-		})
+		if cluster.Spec.Ingress.Host != nil {
+			envs = append(envs, corev1.EnvVar{
+				Name:  "VIRTUAL_HOST",
+				Value: *cluster.Spec.Ingress.Host,
+			})
+
+			envs = append(envs, corev1.EnvVar{
+				Name:  "FTLCONF_webserver_domain",
+				Value: *cluster.Spec.Ingress.Host,
+			})
+		}
 	}
 
 	if cluster.Spec.Services.DNS.LoadBalancerIP != nil {
@@ -175,18 +185,23 @@ func DefaultPiholeContainerPorts(webPort, dnsPort int32, dhcpEnabled bool) []cor
 			ContainerPort: dnsPort,
 			Protocol:      corev1.Protocol("UDP"),
 		},
-		{
-			Name:          "client-udp",
-			ContainerPort: 67,
-			Protocol:      corev1.Protocol("UDP"),
-		},
 	}
 
 	dhcpPorts := []corev1.ContainerPort{
 		{
-			Name:          "client-dhcp",
+			Name:          "server-dhcp",
 			ContainerPort: 67,
-			Protocol:      corev1.Protocol("TCP"),
+			Protocol:      corev1.Protocol("UDP"),
+		},
+		{
+			Name:          "client-dhcp",
+			ContainerPort: 68,
+			Protocol:      corev1.Protocol("UDP"),
+		},
+		{
+			Name:          "dhcpv6",
+			ContainerPort: 547,
+			Protocol:      corev1.Protocol("UDP"),
 		},
 	}
 
@@ -250,7 +265,7 @@ func DefaultStatisticsObj(obj *piholev1alpha1.PiHoleCluster) {
 
 	statisticsObj.Mode = piholev1alpha1.StatsModeExternal
 	if clusterStats.External == nil {
-		statisticsObj.External = &piholev1alpha1.ExternalStatsConfig{
+		statisticsObj.External = &piholev1alpha1.ExternalStatisticsConfig{
 			BatchSize:       StatisticsExportBatchSize,
 			IntervalSeconds: StatisticsExportInterval,
 		}

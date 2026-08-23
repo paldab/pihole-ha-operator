@@ -33,7 +33,6 @@ func TestReconcileFailoverSingleInstance_HealthyPodWithoutRoleBecomesPrimary(
 		ctx,
 		k8sClient,
 		pod.DeepCopy(),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -61,7 +60,6 @@ func TestReconcileFailoverSingleInstance_HealthyStandbyBecomesPrimary(
 		ctx,
 		k8sClient,
 		pod.DeepCopy(),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -85,18 +83,13 @@ func TestReconcileFailoverSingleInstance_HealthyPrimaryRemainsPrimary(
 	pod := newSingleInstancePod(defaultSinglePodName, "primary", true)
 	k8sClient := newSingleInstanceFakeClient(t, pod.DeepCopy())
 
-	result, err := failover.ReconcileFailoverSingleInstance(
+	_, err := failover.ReconcileFailoverSingleInstance(
 		ctx,
 		k8sClient,
 		pod.DeepCopy(),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.RequeueAfter != 0 {
-		t.Fatalf("expected no requeue, got %+v", result)
 	}
 
 	assertSingleInstancePodRole(
@@ -121,15 +114,14 @@ func TestReconcileFailoverSingleInstance_UnhealthyPodIsNotPromoted(
 		ctx,
 		k8sClient,
 		pod.DeepCopy(),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.RequeueAfter <= 0 {
+	if result.Reason == failover.ReasonLeaderUnhealthy {
 		t.Fatalf(
-			"expected unhealthy pod to be requeued, got %+v",
+			"expected unhealthy pod reason, got %+v",
 			result,
 		)
 	}
@@ -160,15 +152,14 @@ func TestReconcileFailoverSingleInstance_TerminatingPodIsNotPromoted(
 		ctx,
 		k8sClient,
 		pod.DeepCopy(),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.RequeueAfter <= 0 {
+	if result.Reason == failover.ReasonLeaderUnhealthy {
 		t.Fatalf(
-			"expected terminating pod to be requeued, got %+v",
+			"expected terminating pod to be reason leader unhealthy, got %+v",
 			result,
 		)
 	}

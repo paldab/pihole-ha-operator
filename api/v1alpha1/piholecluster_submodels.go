@@ -118,6 +118,7 @@ type ExternalStatisticsConfig struct {
 }
 
 type StatisticsDatabaseSpec struct {
+	// +kubebuilder:validation:MinLength=1
 	Host string `json:"host"`
 
 	// +kubebuilder:default:=5432

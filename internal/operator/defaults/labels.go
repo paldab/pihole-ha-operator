@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	RoleLabel    = "paldab.nl/instanceRole"
-	LeaderLabel  = "primary"
-	StandbyLabel = "standby"
+	RoleLabel        = "paldab.nl/instanceRole"
+	LeaderLabel      = "primary"
+	StandbyLabel     = "standby"
+	ClusterNameLabel = "paldab.nl/cluster"
 )
 
 var PrimaryPodLabels = map[string]string{
@@ -28,7 +29,7 @@ func PiholeOperatorLabels(clusterName string) map[string]string {
 		"app.kubernetes.io/instance":   clusterName,
 		"app.kubernetes.io/part-of":    "pihole-ha",
 
-		"paldab.nl/cluster": clusterName,
+		ClusterNameLabel: clusterName,
 	}
 }
 

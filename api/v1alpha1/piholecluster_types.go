@@ -36,6 +36,7 @@ type PiHoleClusterSpec struct {
 	Storage *PiholePodStorage `json:"storage,omitempty"`
 
 	// +kubebuilder:default:="UTC"
+	// +kubebuilder:validation:MinLength=1
 	TimeZone *string `json:"timezone,omitempty"`
 
 	// +kubebuilder:default:={}
@@ -52,20 +53,6 @@ type PiHoleClusterSpec struct {
 
 // PiHoleClusterStatus defines the observed state of PiHoleCluster.
 type PiHoleClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// For Kubernetes API conventions, see:
-	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
-	// conditions represent the current state of the PiHoleCluster resource.
-	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
-	//
-	// Standard condition types include:
-	// - "Available": the resource is fully functional
-	// - "Progressing": the resource is being created or updated
-	// - "Degraded": the resource failed to reach or maintain its desired state
-	//
 	// The status of each condition is one of True, False, or Unknown.
 	// +listType=map
 	// +listMapKey=type
@@ -75,9 +62,11 @@ type PiHoleClusterStatus struct {
 	// +optional
 	CurrentLeader *string `json:"currentPrimary,omitempty"`
 
+	// todo: remove
 	Phase string `json:"phase"`
 
 	// +kubebuilder:default:=false
+	// todo: remove
 	FailoverInProgress *bool `json:"failoverInProgress"`
 
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -85,7 +74,7 @@ type PiHoleClusterStatus struct {
 	DesiredReplicas int32 `json:"desiredReplicas,omitempty"`
 	ReadyReplicas   int32 `json:"readyReplicas,omitempty"`
 	UpdatedReplicas int32 `json:"updatedReplicas,omitempty"`
-	CurrentReplicas int32 `json:"currentReplicas"`
+	CurrentReplicas int32 `json:"currentReplicas,omitempty"`
 
 	Statistics StatisticsStatus `json:"statistics"`
 }
@@ -94,9 +83,10 @@ type PiHoleClusterStatus struct {
 // +kubebuilder:subresource:status
 
 // PiHoleCluster is the Schema for the piholeclusters API
-// +kubebuilder:printcolumn:name="Replicas",type=number,JSONPath=`.status.readyReplicas`
+// +kubebuilder:printcolumn:name="Replicas",type=number,JSONPath=`.spec.replicas`
 // +kubebuilder:printcolumn:name="Primary",type=string,JSONPath=`.status.currentPrimary`
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.image`
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].reason"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type PiHoleCluster struct {
 	metav1.TypeMeta `json:",inline"`
