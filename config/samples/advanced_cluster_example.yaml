@@ -55,7 +55,7 @@ spec:
   services:
     dns:
       type: LoadBalancer
-      loadBalancerIP: 10.10.10.10 # Static DNS route for router to register upstream DNS
+      loadBalancerIP: 192.168.1.10 # Static DNS route for router to register upstream DNS
 
     web:
       annotations:
