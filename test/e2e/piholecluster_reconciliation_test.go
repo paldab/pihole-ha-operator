@@ -104,7 +104,7 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 	Context("PiHoleCluster reconciliation", func() {
 		It("ensuring configmaps are created on cluster creation", func() {
 			By("checking if the configmaps are present")
-			Eventually(func() error {
+			Eventually(func(g Gomega) {
 				cmd := exec.Command(
 					"kubectl",
 					"get",
@@ -116,20 +116,18 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 				)
 
 				output, err := utils.Run(cmd)
-				Expect(err).ToNot(HaveOccurred())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				var configmaps corev1.ConfigMapList
-				Expect(json.Unmarshal([]byte(output), &configmaps)).To(Succeed())
+				g.Expect(json.Unmarshal([]byte(output), &configmaps)).To(Succeed())
 
 				// removing one because the default volume of the sts is not a CM
 				expectedConfigmapLen := len(defaults.PiholeStaticMountConfig) - 1
-				Expect(configmaps.Items).To(
+				g.Expect(configmaps.Items).To(
 					HaveLen(expectedConfigmapLen),
 					fmt.Sprintf("expecting %d configmaps but found %d", expectedConfigmapLen, len(configmaps.Items)),
 				)
-
-				return err
-			}, 2*time.Minute, 2*time.Second).Should(Succeed())
+			}, time.Minute, 2*time.Second).Should(Succeed())
 		})
 
 		It("ensuring statefulset of piholecluster have been created with the correct configuration", func() {
