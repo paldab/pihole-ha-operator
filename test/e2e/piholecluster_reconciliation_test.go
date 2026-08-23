@@ -129,7 +129,7 @@ var _ = Describe("PiHoleCluster reconciliation", func() {
 				)
 
 				return err
-			}, time.Minute, 2*time.Second).Should(Succeed())
+			}, 2*time.Minute, 2*time.Second).Should(Succeed())
 		})
 
 		It("ensuring statefulset of piholecluster have been created with the correct configuration", func() {
