@@ -145,11 +145,19 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build-operator
 docker-build-operator: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} -f Dockerfile.operator .
+	$(CONTAINER_TOOL) build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+		-t ${IMG} \
+		-f Dockerfile.operator .
 
 .PHONY: docker-build-exporter
 docker-build-exporter: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${EXPORTER_IMG} -f Dockerfile.exporter .
+	$(CONTAINER_TOOL) build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+		-t ${EXPORTER_IMG} \
+		-f Dockerfile.exporter .
 
 .PHONY: docker-push-operator
 docker-push-operator: ## Push docker image with the manager.
