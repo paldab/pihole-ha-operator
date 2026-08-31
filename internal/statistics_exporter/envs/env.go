@@ -13,21 +13,6 @@ import (
 	"github.com/paldab/pihole-ha-operator/internal/statistics_exporter/database"
 )
 
-func GetIntEnvironment(env string, defaultValue int) int {
-	envName := os.Getenv(env)
-	if envName == "" {
-		return defaultValue
-	}
-
-	parsedEnvToInt, err := strconv.Atoi(envName)
-	if err != nil {
-		log.Printf("could not convert %s with value: %s to int. Using default %d\n", env, envName, defaultValue)
-		return defaultValue
-	}
-
-	return parsedEnvToInt
-}
-
 func GetPiholeFTLDBPath(defaultFTLDBPath string) string {
 	ftlPath := os.Getenv("PIHOLE_FTL_DB")
 	if ftlPath != "" {
@@ -55,7 +40,8 @@ func GetDatabaseConfigFromEnvs() database.PostgresConnConfig {
 	}
 
 	var databaseConnection = database.PostgresConnConfig{Database: "pihole_statistics"}
-	dbPort := GetIntEnvironment("DB_PORT", 5432)
+	dbPort := getIntEnvironment("DB_PORT", 5432)
+	dbSSL := getBoolEnvironment("DB_SSL", false)
 	dbName := os.Getenv("DB_DATABASE")
 
 	if dbName != "" {
@@ -66,13 +52,14 @@ func GetDatabaseConfigFromEnvs() database.PostgresConnConfig {
 	databaseConnection.Port = uint16(dbPort)
 	databaseConnection.User = requiredDBEnvs["DB_USER"]
 	databaseConnection.Password = requiredDBEnvs["DB_PASSWORD"]
+	databaseConnection.SSL = dbSSL
 
 	return databaseConnection
 }
 
 func GetExporterEnvironments(defaultBatchSize, defaultInterval int) exporterapi.ExporterConfig {
-	exportBatchSize := GetIntEnvironment("EXPORTER_BATCH_SIZE", defaultBatchSize)
-	exportInterval := GetIntEnvironment("EXPORTER_INTERVAL", defaultInterval)
+	exportBatchSize := getIntEnvironment("EXPORTER_BATCH_SIZE", defaultBatchSize)
+	exportInterval := getIntEnvironment("EXPORTER_INTERVAL", defaultInterval)
 
 	return exporterapi.ExporterConfig{
 		Batchsize: exportBatchSize,
@@ -128,4 +115,34 @@ func getOrCreateSourceID(dirPath string) (string, error) {
 	}
 
 	return id, nil
+}
+
+func getIntEnvironment(env string, defaultValue int) int {
+	envName := os.Getenv(env)
+	if envName == "" {
+		return defaultValue
+	}
+
+	parsedEnvToInt, err := strconv.Atoi(envName)
+	if err != nil {
+		log.Printf("could not convert %s with value: %s to int. Using default %d\n", env, envName, defaultValue)
+		return defaultValue
+	}
+
+	return parsedEnvToInt
+}
+
+func getBoolEnvironment(env string, defaultValue bool) bool {
+	envName := os.Getenv(env)
+	if envName == "" {
+		return defaultValue
+	}
+
+	parsedEnvToBool, err := strconv.ParseBool(envName)
+	if err != nil {
+		log.Printf("could not convert %s with value: %s to bool. Using default %t\n", env, envName, defaultValue)
+		return defaultValue
+	}
+
+	return parsedEnvToBool
 }

@@ -14,16 +14,23 @@ type PostgresConnConfig struct {
 	User     string
 	Password string
 	Database string
+	SSL      bool
 }
 
 func CreatePostgresConnString(cfg PostgresConnConfig) string {
+	sslEnabledStr := "disable"
+	if cfg.SSL {
+		sslEnabledStr = "enable"
+	}
+
 	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host,
 		cfg.Port,
 		cfg.User,
 		cfg.Password,
 		cfg.Database,
+		sslEnabledStr,
 	)
 }
 
