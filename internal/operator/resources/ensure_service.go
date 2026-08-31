@@ -14,22 +14,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	webService  = "web"
+	dnsService  = "dns"
+	dhcpService = "dhcp"
+)
+
 type ServiceBuilderFunction func(*v1alpha1.PiHoleCluster) *corev1.Service
 
 type DesiredServiceConfig struct {
-	Annotations            map[string]string
-	Config                 v1alpha1.ServiceConfig
-	Ports                  []corev1.ServicePort
-	LoadBalancerIP         *string
-	NodePort               *int32
-	SessionAffinityTimeout *int32
+	Annotations    map[string]string
+	Config         v1alpha1.ServiceConfig
+	Ports          []corev1.ServicePort
+	LoadBalancerIP *string
+	NodePort       *int32
 }
 
 func buildServiceMap(cluster *v1alpha1.PiHoleCluster) map[string]DesiredServiceConfig {
 	serviceConfig := cluster.Spec.Services
 
 	return map[string]DesiredServiceConfig{
-		"web": {
+		webService: {
 			Config:         *serviceConfig.Web,
 			Annotations:    cluster.Spec.Services.Web.Annotations,
 			NodePort:       cluster.Spec.Services.Web.NodePort,
@@ -48,10 +53,9 @@ func buildServiceMap(cluster *v1alpha1.PiHoleCluster) map[string]DesiredServiceC
 					TargetPort: intstr.FromInt(443),
 				},
 			},
-			// SessionAffinityTimeout: new(int32(10800)),
 		},
 
-		"dns": {
+		dnsService: {
 			Config:         *serviceConfig.DNS,
 			Annotations:    cluster.Spec.Services.DNS.Annotations,
 			NodePort:       cluster.Spec.Services.DNS.NodePort,
@@ -72,7 +76,7 @@ func buildServiceMap(cluster *v1alpha1.PiHoleCluster) map[string]DesiredServiceC
 			},
 		},
 
-		"dhcp": {
+		dhcpService: {
 			Config:         *serviceConfig.Web,
 			Annotations:    cluster.Spec.Services.DHCP.Annotations,
 			NodePort:       cluster.Spec.Services.DHCP.NodePort,
@@ -150,6 +154,13 @@ func EnsureServices(rc *ResourceContext) error {
 
 			if desiredSvc.Spec.LoadBalancerIP != "" {
 				currentSvc.Spec.LoadBalancerIP = desiredSvc.Spec.LoadBalancerIP
+			}
+
+			// Adding External Traffic Policy Local to preserve the IP's of the clients
+			if svcName == "dns" {
+				if desiredSvc.Spec.Type == corev1.ServiceTypeLoadBalancer || desiredSvc.Spec.Type == corev1.ServiceTypeNodePort {
+					currentSvc.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyLocal
+				}
 			}
 
 			return ctrl.SetControllerReference(rc.Cluster, currentSvc, rc.K8sClient.Scheme())
