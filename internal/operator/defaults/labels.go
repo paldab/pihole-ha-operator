@@ -5,6 +5,7 @@ import (
 
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/operator/utils"
+	"github.com/paldab/pihole-ha-operator/version"
 )
 
 const (
@@ -25,6 +26,7 @@ var StandbyPodLabels = map[string]string{
 func PiholeOperatorLabels(clusterName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       "pihole",
+		"app.kubernetes.io/version":    version.Version,
 		"app.kubernetes.io/managed-by": "pihole-ha-operator",
 		"app.kubernetes.io/instance":   clusterName,
 		"app.kubernetes.io/part-of":    "pihole-ha",
@@ -40,7 +42,6 @@ func PiholePodLabels(cluster *v1alpha1.PiHoleCluster) map[string]string {
 
 	operatorEnforcedLabels := utils.MergeMap(operatorLabels, staticLabels)
 
-	// "app.kubernetes.io/version":    imageTag, TODO add only on pods, not on cluster
 	if userAddedLabels != nil {
 		return utils.MergeMap(userAddedLabels, operatorEnforcedLabels)
 	}
