@@ -24,12 +24,16 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	piholev1alpha1 "github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
@@ -161,12 +165,32 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	return ctrl.Result{}, nil
 }
 
+func watchManagedServices(e event.UpdateEvent) bool {
+	oldSvc, ok := e.ObjectOld.(*corev1.Service)
+	if !ok {
+		return true
+	}
+
+	newSvc, ok := e.ObjectNew.(*corev1.Service)
+	if !ok {
+		return true
+	}
+
+	return !equality.Semantic.DeepEqual(oldSvc.Spec, newSvc.Spec) ||
+		!equality.Semantic.DeepEqual(oldSvc.Labels, newSvc.Labels) ||
+		!equality.Semantic.DeepEqual(oldSvc.Annotations, newSvc.Annotations) ||
+		!equality.Semantic.DeepEqual(oldSvc.OwnerReferences, newSvc.OwnerReferences)
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *PiHoleClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piholev1alpha1.PiHoleCluster{}).
 		Owns(&appsv1.StatefulSet{}).
-		Owns(&corev1.Service{}).
+		Owns(&corev1.Service{},
+			builder.WithPredicates(predicate.Funcs{
+				UpdateFunc: watchManagedServices,
+			})).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&networkingv1.Ingress{}).
 		Named("piholecluster").

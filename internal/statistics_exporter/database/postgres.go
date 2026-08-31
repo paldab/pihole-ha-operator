@@ -20,7 +20,7 @@ type PostgresConnConfig struct {
 func CreatePostgresConnString(cfg PostgresConnConfig) string {
 	sslEnabledStr := "disable"
 	if cfg.SSL {
-		sslEnabledStr = "enable"
+		sslEnabledStr = "prefer"
 	}
 
 	return fmt.Sprintf(
