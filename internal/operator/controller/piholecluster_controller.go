@@ -24,14 +24,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -85,13 +84,31 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Scheme:    r.Scheme,
 	}
 
-	// create empty configmaps
-	if err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext); err != nil {
-		log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
-		return ctrl.Result{}, err
+	activePiholeConfig, piholeConfigError := getActivePiholeConfig(&resourceContext)
+	if piholeConfigError != nil {
+		if apierrors.IsNotFound(piholeConfigError) {
+			return ctrl.Result{}, nil
+		}
+
+		log.Error(piholeConfigError, "could not find requested pihole configs!", "cluster", clusterCopy.Name)
+		return ctrl.Result{}, piholeConfigError
 	}
 
-	if err := resources.EnsureStatefulSet(&resourceContext); err != nil {
+	configChecksum := ""
+
+	// Only create configmaps if there is NOT a piholeConfig
+	if activePiholeConfig == nil {
+		// create empty configmaps
+		if err := resources.CreateInitialEmptyPiholeConfigmaps(&resourceContext); err != nil {
+			log.Error(err, "failed to create initial configmaps for pihole cluster", "cluster", clusterCopy.Name)
+			return ctrl.Result{}, err
+		}
+	} else {
+		// calculate checksum
+		configChecksum = activePiholeConfig.Status.Checksum
+	}
+
+	if err := resources.EnsureStatefulSet(&resourceContext, configChecksum); err != nil {
 		log.Error(err, "failed to reconcile StatefulSet")
 		return ctrl.Result{}, err
 	}
@@ -126,18 +143,18 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	var failoverResult failover.FailoverResult
-	var err error
+	// var err error
 
 	desiredReplicas := ptr.Deref(clusterCopy.Spec.Replicas, int32(1))
 
 	if desiredReplicas == 1 && len(clusterOwnedpods.Items) == 1 {
 		onlyPod := clusterOwnedpods.Items[0]
-		failoverResult, err = failover.ReconcileFailoverSingleInstance(ctx, r.Client, &onlyPod)
+		failoverResult, piholeConfigError = failover.ReconcileFailoverSingleInstance(ctx, r.Client, &onlyPod)
 	} else if desiredReplicas > 1 {
-		failoverResult, err = failover.ReconcileFailoverMultiInstance(ctx, r.Client, clusterOwnedpods)
+		failoverResult, piholeConfigError = failover.ReconcileFailoverMultiInstance(ctx, r.Client, clusterOwnedpods)
 	}
 
-	if err != nil {
+	if piholeConfigError != nil {
 		// handle startup cases where pods are still getting ready
 		if failoverResult.Reason == failover.ReasonLeaderUnavailable {
 			if err := status.UpdateClusterStatus(&resourceContext, managedSts, &failoverResult); err != nil {
@@ -150,8 +167,8 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 
-		log.Error(err, "something went wrong during the failover process")
-		return ctrl.Result{}, err
+		log.Error(piholeConfigError, "something went wrong during the failover process")
+		return ctrl.Result{}, piholeConfigError
 	}
 
 	if err := status.UpdateClusterStatus(&resourceContext, managedSts, &failoverResult); err != nil {
@@ -165,27 +182,14 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	return ctrl.Result{}, nil
 }
 
-func watchManagedServices(e event.UpdateEvent) bool {
-	oldSvc, ok := e.ObjectOld.(*corev1.Service)
-	if !ok {
-		return true
-	}
-
-	newSvc, ok := e.ObjectNew.(*corev1.Service)
-	if !ok {
-		return true
-	}
-
-	return !equality.Semantic.DeepEqual(oldSvc.Spec, newSvc.Spec) ||
-		!equality.Semantic.DeepEqual(oldSvc.Labels, newSvc.Labels) ||
-		!equality.Semantic.DeepEqual(oldSvc.Annotations, newSvc.Annotations) ||
-		!equality.Semantic.DeepEqual(oldSvc.OwnerReferences, newSvc.OwnerReferences)
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *PiHoleClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piholev1alpha1.PiHoleCluster{}).
+		Watches(
+			&piholev1alpha1.PiHoleConfig{},
+			handler.EnqueueRequestsFromMapFunc(r.watchActivePiholeConfig),
+		).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{},
 			builder.WithPredicates(predicate.Funcs{
