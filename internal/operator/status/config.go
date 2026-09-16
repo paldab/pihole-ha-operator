@@ -14,6 +14,7 @@ func SetConfigReadyCondition(
 	ctx context.Context,
 	k8sClient client.Client,
 	config *v1alpha1.PiHoleConfig,
+	checksum string,
 	status metav1.ConditionStatus,
 	reason string,
 	message string,
@@ -29,14 +30,15 @@ func SetConfigReadyCondition(
 	})
 
 	config.Status.ObservedGeneration = config.Generation
+	config.Status.Checksum = checksum
 
-	if equality.Semantic.DeepEqual(config.Status, originalConfig.Status) {
-		return nil
+	if !equality.Semantic.DeepEqual(config.Status, originalConfig.Status) {
+		return k8sClient.Status().Patch(
+			ctx,
+			config,
+			client.MergeFrom(originalConfig),
+		)
 	}
 
-	return k8sClient.Status().Patch(
-		ctx,
-		config,
-		client.MergeFrom(originalConfig),
-	)
+	return nil
 }

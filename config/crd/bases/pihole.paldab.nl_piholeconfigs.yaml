@@ -109,6 +109,8 @@ spec:
               additionalHosts:
                 format: int32
                 type: integer
+              checksum:
+                type: string
               cnames:
                 format: int32
                 type: integer
@@ -187,6 +189,7 @@ spec:
             required:
             - activeAdlists
             - additionalHosts
+            - checksum
             - cnames
             type: object
         required:

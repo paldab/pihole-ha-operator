@@ -7,6 +7,10 @@ import (
 )
 
 func ApplyDefaultConfigValues(obj *piholev1alpha1.PiHoleConfig, cluster *piholev1alpha1.PiHoleCluster) {
+	if cluster.Spec.Services == nil {
+		cluster.Spec.Services = &piholev1alpha1.PiHoleServiceSpec{}
+	}
+
 	if cluster.Spec.Services.DHCP == nil {
 		cluster.Spec.Services.DHCP = &piholev1alpha1.ServiceConfig{}
 	}

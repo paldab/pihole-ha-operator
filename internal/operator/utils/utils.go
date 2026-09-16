@@ -34,6 +34,8 @@ func MergeMap(baseMap, overrideMap map[string]string) map[string]string {
 	return baseMap
 }
 
+// CalculateChecksum returns the checksum of values given.
+// Returns an empty string as default
 func CalculateChecksum[V any](values V) (string, error) {
 	data, err := json.Marshal(values)
 

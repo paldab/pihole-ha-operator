@@ -65,9 +65,10 @@ type PiHoleConfigStatus struct {
 
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	ActiveAdlists   int32 `json:"activeAdlists"`
-	AdditionalHosts int32 `json:"additionalHosts"`
-	CNAMES          int32 `json:"cnames"`
+	ActiveAdlists   int32  `json:"activeAdlists"`
+	AdditionalHosts int32  `json:"additionalHosts"`
+	CNAMES          int32  `json:"cnames"`
+	Checksum        string `json:"checksum"`
 }
 
 // +kubebuilder:object:root=true

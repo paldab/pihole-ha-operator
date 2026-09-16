@@ -36,6 +36,7 @@ import (
 	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
 	"github.com/paldab/pihole-ha-operator/internal/operator/resources"
 	"github.com/paldab/pihole-ha-operator/internal/operator/status"
+	"github.com/paldab/pihole-ha-operator/internal/operator/utils"
 )
 
 // PiHoleConfigReconciler reconciles a PiHoleConfig object
@@ -54,8 +55,8 @@ type PiHoleConfigReconciler struct {
 func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 
-	var piholeConfig piholev1alpha1.PiHoleConfig
-	if err := r.Get(ctx, req.NamespacedName, &piholeConfig); err != nil {
+	var currentPiholeConfig piholev1alpha1.PiHoleConfig
+	if err := r.Get(ctx, req.NamespacedName, &currentPiholeConfig); err != nil {
 		// Object was deleted
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -65,10 +66,10 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	clusterName := piholeConfig.Spec.ClusterRef.Name
-	configs, err := r.configsForCluster(ctx, piholeConfig.Namespace, clusterName)
+	clusterName := currentPiholeConfig.Spec.ClusterRef.Name
+	configs, err := r.configsForCluster(ctx, currentPiholeConfig.Namespace, clusterName)
 	if err != nil {
-		log.Error(err, "could not list PiholeConfigs for cluster", "cluster", clusterName, "config", piholeConfig.Name)
+		log.Error(err, "could not list PiholeConfigs for cluster", "cluster", clusterName, "config", currentPiholeConfig.Name)
 		return ctrl.Result{}, err
 	}
 
@@ -80,7 +81,7 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		log.Info(
 			"could not determine active PiholeConfig",
 			"cluster", clusterName,
-			"config", piholeConfig.Name,
+			"config", currentPiholeConfig.Name,
 		)
 
 		return ctrl.Result{
@@ -89,11 +90,12 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	// Rejects duplicate configs for the same cluster
-	if activeConfig.UID != piholeConfig.UID {
+	if activeConfig.UID != currentPiholeConfig.UID {
 		if err := status.SetConfigReadyCondition(
 			ctx,
 			r.Client,
-			&piholeConfig,
+			&currentPiholeConfig,
+			"",
 			metav1.ConditionFalse,
 			status.ReasonDuplicateClusterRef,
 			fmt.Sprintf(
@@ -109,13 +111,14 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	var piholeCluster piholev1alpha1.PiHoleCluster
-	requestedCluster := types.NamespacedName{Name: clusterName, Namespace: piholeConfig.Namespace}
+	requestedCluster := types.NamespacedName{Name: clusterName, Namespace: currentPiholeConfig.Namespace}
 	if err := r.Get(ctx, requestedCluster, &piholeCluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			if statusUpdateErr := status.SetConfigReadyCondition(
 				ctx,
 				r.Client,
-				&piholeConfig,
+				&currentPiholeConfig,
+				"",
 				metav1.ConditionFalse,
 				status.ReasonClusterNotFound,
 				fmt.Sprintf(
@@ -133,13 +136,13 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			err,
 			"could not find the pihole cluster of the requested pihole config",
 			"cluster", clusterName,
-			"namespace", piholeConfig.Namespace,
-			"config", piholeConfig.Name,
+			"namespace", currentPiholeConfig.Namespace,
+			"config", currentPiholeConfig.Name,
 		)
 		return ctrl.Result{}, err
 	}
 
-	configCopy := piholeConfig.DeepCopy()
+	configCopy := currentPiholeConfig.DeepCopy()
 	defaults.ApplyDefaultConfigValues(configCopy, &piholeCluster)
 
 	resourceContext := resources.ResourceContext{
@@ -150,18 +153,25 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	// Fill configmaps with data
+	var totalConfigChecksums = make([]string, 0, len(defaults.PiholeStaticMountConfig)-1)
 	for component := range defaults.PiholeStaticMountConfig {
 		if component == defaults.StsVolumeName {
 			continue
 		}
 
-		if err := resources.CreateConfigmapWrapper(&resourceContext, configCopy, component); err != nil {
-			log.Error(err, "something went wrong when ensuring configmap", "config", piholeConfig.Name, "type", string(component))
+		checksum, err := resources.CreateConfigmapWrapper(&resourceContext, configCopy, component)
+
+		// Appending checksums here because it needs to happen regardless of error
+		totalConfigChecksums = append(totalConfigChecksums, checksum)
+
+		if err != nil {
+			log.Error(err, "something went wrong when ensuring configmap", "config", configCopy.Name, "type", string(component))
 
 			if statusUpdateErr := status.SetConfigReadyCondition(
 				ctx,
 				r.Client,
-				&piholeConfig,
+				&currentPiholeConfig,
+				"",
 				metav1.ConditionFalse,
 				status.ReasonReconcileFailed,
 				fmt.Sprintf(
@@ -176,10 +186,18 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
+	// update checksum on piholeConfigObject
+	finalChecksum, err := utils.CalculateChecksum(totalConfigChecksums)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Update PiholeConfig Status
 	if err := status.SetConfigReadyCondition(
 		ctx,
 		r.Client,
-		&piholeConfig,
+		&currentPiholeConfig,
+		finalChecksum,
 		metav1.ConditionTrue,
 		status.ReasonConfigurationApplied,
 		fmt.Sprintf(

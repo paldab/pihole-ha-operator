@@ -40,13 +40,13 @@ func buildBaseConfigmap(cluster *v1alpha1.PiHoleCluster, component defaults.Piho
 	}
 }
 
-func EnsureConfigmap(rc *ResourceContext, data PiholeConfigItem, component defaults.PiholeComponent) error {
+func EnsureConfigmap(rc *ResourceContext, data PiholeConfigItem, component defaults.PiholeComponent) (string, error) {
 	configmap := buildBaseConfigmap(rc.Cluster, component)
 	stringifiedData := data.ToConfigmapString()
 	checksum, err := utils.CalculateChecksum(data)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	desiredData := map[string]string{
@@ -67,7 +67,7 @@ func EnsureConfigmap(rc *ResourceContext, data PiholeConfigItem, component defau
 		return ctrl.SetControllerReference(rc.Cluster, configmap, rc.Scheme)
 	})
 
-	return err
+	return checksum, err
 }
 
 func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
@@ -96,7 +96,7 @@ func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
 
 		configmapName := defaults.GetConfigMapName(rc.Cluster.Name, string(component))
 		if !slices.Contains(createdConfigMapNames, configmapName) {
-			err := CreateConfigmapWrapper(rc, nil, component)
+			_, err := CreateConfigmapWrapper(rc, nil, component)
 
 			if err != nil {
 				return err
@@ -107,30 +107,28 @@ func CreateInitialEmptyPiholeConfigmaps(rc *ResourceContext) error {
 	return nil
 }
 
-func CreateConfigmapWrapper(rc *ResourceContext, config *v1alpha1.PiHoleConfig, component defaults.PiholeComponent) error {
+func CreateConfigmapWrapper(rc *ResourceContext, config *v1alpha1.PiHoleConfig, component defaults.PiholeComponent) (string, error) {
 	if config == nil {
 		emptyConfig := v1alpha1.PiHoleConfig{Spec: v1alpha1.PiHoleConfigSpec{}}
 		return EnsureConfigmap(rc, &emptyConfig.Spec.Adlists, component)
 	}
 
-	var err error
-
 	switch component {
 	case defaults.Custom:
-		err = EnsureConfigmap(rc, &config.Spec.CustomOptions, component)
+		return EnsureConfigmap(rc, &config.Spec.CustomOptions, component)
 	case defaults.AddHosts:
-		err = EnsureConfigmap(rc, &config.Spec.Hosts, component)
+		return EnsureConfigmap(rc, &config.Spec.Hosts, component)
 	case defaults.CNAMEs:
-		err = EnsureConfigmap(rc, &config.Spec.CNAMEs, component)
+		return EnsureConfigmap(rc, &config.Spec.CNAMEs, component)
 	case defaults.Adlist:
-		err = EnsureConfigmap(rc, &config.Spec.Adlists, component)
+		return EnsureConfigmap(rc, &config.Spec.Adlists, component)
 	case defaults.Denylist:
-		err = EnsureConfigmap(rc, &config.Spec.Denylist, component)
+		return EnsureConfigmap(rc, &config.Spec.Denylist, component)
 	case defaults.Allowlist:
-		err = EnsureConfigmap(rc, &config.Spec.Allowlist, component)
+		return EnsureConfigmap(rc, &config.Spec.Allowlist, component)
 	case defaults.Regexlist:
-		err = EnsureConfigmap(rc, &config.Spec.Regexlist, component)
+		return EnsureConfigmap(rc, &config.Spec.Regexlist, component)
 	}
 
-	return err
+	return "", fmt.Errorf("component was NOT found in one of the static configs of Pihole. component: %s", component)
 }

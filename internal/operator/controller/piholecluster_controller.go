@@ -113,12 +113,12 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	clusterOwnedPodLabels := defaults.PiholeOperatorLabels(piholeCluster.Name)
+	clusterOwnedPodLabels := defaults.PiholeOperatorLabels(clusterCopy.Name)
 	clusterOwnedpods := &corev1.PodList{}
 	if err := r.List(
 		ctx,
 		clusterOwnedpods,
-		client.InNamespace(piholeCluster.Namespace),
+		client.InNamespace(clusterCopy.Namespace),
 		client.MatchingLabels(clusterOwnedPodLabels),
 	); err != nil {
 		log.Error(err, "failed to fetch managed Pihole Pods")
@@ -128,7 +128,7 @@ func (r *PiHoleClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	var failoverResult failover.FailoverResult
 	var err error
 
-	desiredReplicas := ptr.Deref(piholeCluster.Spec.Replicas, int32(1))
+	desiredReplicas := ptr.Deref(clusterCopy.Spec.Replicas, int32(1))
 
 	if desiredReplicas == 1 && len(clusterOwnedpods.Items) == 1 {
 		onlyPod := clusterOwnedpods.Items[0]
