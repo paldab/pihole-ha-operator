@@ -151,17 +151,19 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Scheme:    r.Scheme,
 	}
 
+	configChecksum, err := utils.CalculateChecksum(configCopy.Spec)
+	if err != nil {
+		log.Error(err, "could not calculate the checksum of the PiholeConfig", "config", configCopy.Name)
+		return ctrl.Result{}, err
+	}
+
 	// Fill configmaps with data
-	var totalConfigChecksums = make([]string, 0, len(defaults.PiholeStaticMountConfig)-1)
 	for component := range defaults.PiholeStaticMountConfig {
 		if component == defaults.StsVolumeName {
 			continue
 		}
 
-		checksum, err := resources.CreateConfigmapWrapper(&resourceContext, configCopy, component)
-
-		// Appending checksums here because it needs to happen regardless of error
-		totalConfigChecksums = append(totalConfigChecksums, checksum)
+		_, err := resources.CreateConfigmapWrapper(&resourceContext, configCopy, component)
 
 		if err != nil {
 			log.Error(err, "something went wrong when ensuring configmap", "config", configCopy.Name, "type", string(component))
@@ -185,18 +187,12 @@ func (r *PiHoleConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	// update checksum on piholeConfigObject
-	finalChecksum, err := utils.CalculateChecksum(totalConfigChecksums)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	// Update PiholeConfig Status
 	if err := status.SetConfigReadyCondition(
 		ctx,
 		r.Client,
 		&currentPiholeConfig,
-		finalChecksum,
+		configChecksum,
 		metav1.ConditionTrue,
 		status.ReasonConfigurationApplied,
 		fmt.Sprintf(
