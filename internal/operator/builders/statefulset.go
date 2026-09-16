@@ -9,7 +9,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func BuildPiholeStatefulSet(cluster *piholev1alpha1.PiHoleCluster, labels, podLabels map[string]string, containers []corev1.Container, volumes []corev1.Volume) *appsv1.StatefulSet {
+func BuildPiholeStatefulSet(
+	cluster *piholev1alpha1.PiHoleCluster,
+	labels map[string]string,
+	podTemplate corev1.PodTemplateSpec,
+	volumes []corev1.Volume,
+) *appsv1.StatefulSet {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cluster.Name,
@@ -47,32 +52,41 @@ func BuildPiholeStatefulSet(cluster *piholev1alpha1.PiHoleCluster, labels, podLa
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.StatefulSetUpdateStrategyType("RollingUpdate"),
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      podLabels,
-					Annotations: cluster.Spec.Config.Annotations,
-				},
-
-				Spec: corev1.PodSpec{
-					Containers:                   containers,
-					Affinity:                     cluster.Spec.Config.Affinity,
-					Tolerations:                  cluster.Spec.Config.Tolerations,
-					NodeSelector:                 cluster.Spec.Config.NodeSelector,
-					AutomountServiceAccountToken: new(false),
-					SecurityContext: &corev1.PodSecurityContext{
-						FSGroup:             new(int64(1000)),
-						FSGroupChangePolicy: new(corev1.FSGroupChangeOnRootMismatch),
-
-						SeccompProfile: &corev1.SeccompProfile{
-							Type: corev1.SeccompProfileTypeRuntimeDefault,
-						},
-					},
-				},
-			},
+			Template: podTemplate,
 		},
 	}
 
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, volumes...)
 
 	return sts
+}
+
+func BuildPiholePodTemplate(
+	containers []corev1.Container,
+	piholePodConfig piholev1alpha1.PiHolePodConfig,
+	podLabels map[string]string,
+	podAnnotations map[string]string,
+) corev1.PodTemplateSpec {
+
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      podLabels,
+			Annotations: podAnnotations,
+		},
+		Spec: corev1.PodSpec{
+			Containers:                   containers,
+			Affinity:                     piholePodConfig.Affinity,
+			Tolerations:                  piholePodConfig.Tolerations,
+			NodeSelector:                 piholePodConfig.NodeSelector,
+			AutomountServiceAccountToken: new(false),
+			SecurityContext: &corev1.PodSecurityContext{
+				FSGroup:             new(int64(1000)),
+				FSGroupChangePolicy: new(corev1.FSGroupChangeOnRootMismatch),
+
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
+		},
+	}
 }

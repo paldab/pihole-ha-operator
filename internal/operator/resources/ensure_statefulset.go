@@ -7,6 +7,7 @@ import (
 	"github.com/paldab/pihole-ha-operator/api/v1alpha1"
 	"github.com/paldab/pihole-ha-operator/internal/operator/builders"
 	"github.com/paldab/pihole-ha-operator/internal/operator/defaults"
+	"github.com/paldab/pihole-ha-operator/internal/operator/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,10 +28,14 @@ func applyMutableStatefulSetFields(currentSts, desiredSts *appsv1.StatefulSet) {
 	currentSts.Spec.PersistentVolumeClaimRetentionPolicy = desiredSts.Spec.PersistentVolumeClaimRetentionPolicy
 }
 
-func EnsureStatefulSet(rc *ResourceContext) error {
+func EnsureStatefulSet(rc *ResourceContext, configChecksum string) error {
 	log := logf.FromContext(rc.Ctx)
 	stsLabels := defaults.PiholeOperatorLabels(rc.Cluster.Name)
 	podLabels := defaults.PiholePodLabels(rc.Cluster)
+	podAnnotations := utils.MergeMap(rc.Cluster.Spec.Config.Annotations, map[string]string{
+		checksumAnnotation: configChecksum,
+	})
+
 	configVolumes, configVolumeMounts := getPiholeConfigVolumes(rc.Cluster.Name)
 
 	piholeContainer := builders.BuildPiholeContainer(rc.Cluster, configVolumeMounts)
@@ -45,7 +50,8 @@ func EnsureStatefulSet(rc *ResourceContext) error {
 		}
 	}
 
-	desiredSts := builders.BuildPiholeStatefulSet(rc.Cluster, stsLabels, podLabels, containers, configVolumes)
+	desiredPodTemplate := builders.BuildPiholePodTemplate(containers, *rc.Cluster.Spec.Config, podLabels, podAnnotations)
+	desiredSts := builders.BuildPiholeStatefulSet(rc.Cluster, stsLabels, desiredPodTemplate, configVolumes)
 
 	currentSts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{

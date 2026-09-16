@@ -19,7 +19,7 @@ func ValueOrDefault[T any](baseValue, defaultValue *T) *T {
 
 func MergeMap(baseMap, overrideMap map[string]string) map[string]string {
 	if baseMap == nil {
-		return make(map[string]string)
+		baseMap = make(map[string]string)
 	}
 
 	if overrideMap == nil {
