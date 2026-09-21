@@ -9,7 +9,7 @@ layout:
 plugins:
   helm.kubebuilder.io/v2-alpha:
     manifests: dist/install.yaml
-    output: dist
+    output: charts
 projectName: pihole-ha-operator
 repo: github.com/paldab/pihole-ha-operator
 resources:

@@ -31,14 +31,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install Kubebuilder
+        shell: bash
+        run: |
+          curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
+          chmod +x kubebuilder
+          sudo mv kubebuilder /usr/local/bin/kubebuilder
+
       - name: Build docker image
         run: make docker-build-all \
           VERSION=${{ github.ref_name }} \
           GIT_COMMIT=${{ github.sha }}
 
       - name: Lint Helm chart
-        run: |
-          helm lint ./charts/pihole-ha-operator
+        run: helm lint ./charts/chart
+
+      - name: Generate Helm chart
+        run: make generate-helm-chart
 
       - name: Package Helm chart
         shell: bash
@@ -48,7 +62,7 @@ jobs:
 
           mkdir -p dist
 
-          helm package ./charts/pihole-ha-operator \
+          helm package ./charts/chart \
             --destination dist \
             --version "${CHART_VERSION}" \
             --app-version "${RELEASE_TAG}"

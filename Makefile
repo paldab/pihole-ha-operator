@@ -314,9 +314,16 @@ HELM_NAMESPACE ?= pihole-ha-operator-system
 ## Name of the Helm release
 HELM_RELEASE ?= pihole-ha-operator
 ## Path to the Helm chart directory
-HELM_CHART_DIR ?= charts/pihole-ha-operator
+HELM_CHART_DIR ?= charts/chart
 ## Additional arguments to pass to helm commands
 HELM_EXTRA_ARGS ?=
+
+KUBEBUILDER ?= kubebuilder
+
+.PHONY: generate-helm-chart
+generate-helm-chart: generate manifests
+	$(KUBEBUILDER) edit --plugins=helm/v2-alpha --output-dir=charts
+	rm -f .github/workflows/test-chart.yml
 
 .PHONY: install-helm
 install-helm: ## Install the latest version of Helm.
